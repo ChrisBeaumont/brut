@@ -217,3 +217,22 @@ def _sample_and_scale(i4, mips, do_scale, limits):
 
     rgb = np.dstack((mips, i4, i4*0))
     return rgb
+
+
+def _unpack(tree):
+    if isinstance(tree, np.ndarray):
+        return tree.ravel()
+    return np.hstack(_unpack(t) for t in tree)
+
+def multiwavelet_from_rgb(rgb):
+    from scipy.fftpack import dct
+    from pywt import wavedec2
+
+    r = rgb[:, :, 0].astype(np.float)
+    g = rgb[:, :, 1].astype(np.float)
+
+    dctr = dct(r, norm='ortho').ravel()
+    dctg = dct(g, norm='ortho').ravel()
+    daubr = _unpack(wavedec2(r, 'db4'))
+    daubg = _unpack(wavedec2(g, 'db4'))
+    return np.hstack([dctr, dctg, daubr, daubg])

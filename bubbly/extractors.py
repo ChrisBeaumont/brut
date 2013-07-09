@@ -8,8 +8,7 @@ import numpy as np
 from scipy.optimize import fmin_l_bfgs_b as minimize
 
 from .field import Field
-from .util import normalize, ellipse
-from .pstamp import multiwavelet_from_rgb
+from .util import normalize, ellipse, multiwavelet_from_rgb
 
 
 class Extractor(object):
