@@ -241,3 +241,15 @@ def multiwavelet_from_rgb(rgb):
     daubr = _unpack(wavedec2(r, 'db4'))
     daubg = _unpack(wavedec2(g, 'db4'))
     return np.hstack([dctr, dctg, daubr, daubg])
+
+
+def overlap(l, b, r, l0, b0, r0):
+    overlap = np.zeros(l.size, dtype=np.bool)
+    for i in range(l0.size):
+        dl = np.abs(l - l0[i])
+        db = np.abs(b - b0[i])
+        dr = np.maximum(dl, db)
+        thresh = r + r0[i]
+        r_ratio = np.maximum(r / r0[i], r0[i] / r)
+        overlap |= ((dr < thresh) & (r_ratio < 5))
+    return overlap
