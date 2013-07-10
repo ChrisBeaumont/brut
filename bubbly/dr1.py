@@ -7,16 +7,16 @@ import cPickle as pickle
 
 import numpy as np
 import h5py
-from cloud import running_on_cloud
+from cloud import bucket, running_on_cloud
 
 from .util import overlap
 
 
-def _has_field(lon, cloud=False):
+def _has_field(lon):
     """Return True if image data exists for a given longitude"""
     base = os.path.join(os.path.dirname(__file__), 'data', 'galaxy',
                         'registered')
-    if not cloud:
+    if not running_on_cloud():
         return os.path.exists(os.path.join(base, "%3.3i_i4.fits" % lon)) and \
             os.path.exists(os.path.join(base, "%3.3i_mips.fits" % lon))
     else:
@@ -63,27 +63,10 @@ def _high_quality_on_locations():
 def get_catalog():
     pth = os.path.join(os.path.dirname(__file__), 'data', 'catalog.pkl')
 
-    try:
-        import cloud
-        cloud.bucket.sync_from_cloud('catalog.pkl', pth)
-        return pickle.load(open(pth))
-    except:
-        pass
+    if running_on_cloud():
+        return pickle.load(bucket.getf('catalog.pkl'))
 
-    if os.path.exists(pth):
-        return pickle.load(open(pth))
-
-    from MySQLdb import connect
-    db = connect(host='localhost', user='beaumont', db='mwp')
-    cursor = db.cursor()
-    cursor.execute('select lon, lat, angle, semi_major, semi_minor, '
-                   'thickness, hit_rate from clean_bubbles_anna')
-    cat = np.array([map(float, row) for row in cursor.fetchall()])
-
-    with open(pth, 'w') as outfile:
-        pickle.dump(cat, outfile)
-
-    return cat
+    return pickle.load(open(pth))
 
 
 def on_stamp_params():
@@ -102,7 +85,6 @@ class LocationGenerator(object):
         if int(mod3) != mod3 or int(mod3) not in [0, 1, 2]:
             raise ValueError("mod3 must be one of (0, 1, 2)")
         self.mod3 = int(mod3)
-        self.cloud = running_on_cloud()
 
     def __eq__(self, other):
         if not isinstance(other, LocationGenerator):
@@ -115,19 +97,11 @@ class LocationGenerator(object):
     def _random_field(self):
         while True:
             l = np.random.randint(0, 361, 1)[0]
-            if ((l % 3) == self.mod3) and _has_field(l, cloud=self.cloud):
+            if ((l % 3) == self.mod3) and _has_field(l):
                 return  l
 
     def negatives_iterator(self):
         """Yield an infinite sequence of offset stamp parameters
-
-        Parameters
-        ----------
-        state : int or None (default=42)
-            Set the seed for the RNG
-
-        cloud : Yield a sequence more appropriate for
-            working on the cloud (where file access is slow)
 
         Yields
         ------
@@ -138,7 +112,7 @@ class LocationGenerator(object):
 
         while True:
             lon = self._random_field()
-            nsample = 30000 if self.cloud else 500
+            nsample = 30000 if running_on_cloud() else 500
 
             l = np.random.uniform(-.5, .5, nsample) + lon
             b = np.random.uniform(-.8, .8, nsample)

@@ -3,6 +3,7 @@ import os
 from itertools import islice
 
 import numpy as np
+import pytest
 
 from ..model import Model
 from ..extractors import RGBExtractor
@@ -81,3 +82,14 @@ class TestModel(object):
             os.unlink(path)
 
         self._assert_copies(self.m, m2)
+
+    @pytest.mark.skipif('True')
+    def test_cloud_false_pos(self):
+
+        o = self.m.cloud_false_positives(100, workers=10)
+        assert len(o) == 100
+
+        for i in range(len(o)):
+            assert self.m.predict(o[i])
+            for j in range(i + 1, len(o)):
+                assert o[i] != o[j]

@@ -1,9 +1,19 @@
 import os
+
+from cloud import running_on_cloud
 from astropy.io import fits
 from astropy.wcs import WCS
 import numpy as np
 
 from .util import _sample_and_scale
+
+def new_field(lon):
+    """Create and return a new field appropriate
+    for running locally or on PiCloud"""
+
+    if running_on_cloud():
+        return CloudField(lon)
+    return Field(lon)
 
 
 class Field(object):
@@ -15,16 +25,13 @@ class Field(object):
 
         i4 = os.path.join(path, 'registered', '%3.3i_i4.fits' % lon)
         mips = os.path.join(path, 'registered', '%3.3i_mips.fits' % lon)
-        heat = os.path.join(path, 'registered', '%3.3i_heatmap.fits' % lon)
-        cat = os.path.join(path, 'registered', '%3.3i_catalog.fits' % lon)
 
         self.i4 = fits.getdata(i4)
         self.mips = fits.getdata(mips)
         self.wcs = WCS(fits.getheader(i4))
 
     def __getitem__(self, field, *slices):
-        fields = dict(i4=self.i4, i4i=self.i4i, mips=self.mips,
-                      mipsi=self.mipsi, heat=self.heat)
+        fields = dict(i4=self.i4, mips=self.mips)
         if field not in fields:
             raise ValueError("Field must be one of %s" % (fields.keys(),))
         return fields[field][slices]

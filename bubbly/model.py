@@ -1,13 +1,3 @@
-"""
-m = Model(extractor, locator, ...)
-
-m.first_fit()
-m.add_layer()
-m.add_layer()
-m.add_layer(custom_offs)
-m.cv_optimize()
-m.save('test_model')
-"""
 from itertools import islice, ifilter
 import logging
 import cPickle as pickle
@@ -16,6 +6,7 @@ logging.getLogger().setLevel(logging.DEBUG)
 
 import numpy as np
 from sklearn.base import clone
+import cloud
 
 from .cascade import CascadedBooster
 
@@ -67,11 +58,18 @@ class Model(object):
         return self.estimator.predict(x)
 
     def false_positives(self, num):
+        return list(islice(self.false_positives_iterator(), 0, num))
+
+    def false_positives_iterator(self):
         def pos(x):
             return self.predict(x)[0] == 1
 
-        return list(islice(ifilter(pos, self.locator.negatives_iterator()),
-                           0, num))
+        return ifilter(pos, self.locator.negatives_iterator())
+
+    def cloud_false_positives(self, num, workers=10):
+        jobs = cloud.map(self.false_positives, [num / workers] * workers,
+                         _env='mwp', _type='c1')
+        return [r for j in cloud.result(jobs) for r in j]
 
     def _reset(self):
         self.training_data = []

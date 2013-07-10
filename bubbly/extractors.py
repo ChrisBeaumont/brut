@@ -7,33 +7,64 @@ from itertools import product
 import numpy as np
 from scipy.optimize import fmin_l_bfgs_b as minimize
 
-from .field import Field
+from .field import new_field
 from .util import normalize, ellipse, multiwavelet_from_rgb
 
 
 class Extractor(object):
-    def __init__(self, field_class=Field):
-        self._field_class = field_class
+    def __init__(self):
         self._lon = None
         self._field = None
 
     def setup_field(self, lon):
+        """
+        Prepare an extractor by loading an appropriate field
+
+        Parameters
+        ----------
+        lon : int
+            The longitude of the field to load
+
+        Notes
+        -----
+        Fields are cached so, if setup_field is called multiple times in
+        a row with the same `lon` value, the data are only loaded once
+        """
         if lon == self._lon:
             return
         self._field = None  # de-allocate memory, for cloud machines
         self._lon = lon
-        self._field = self._field_class(lon)
+        self._field = new_field(lon)
 
     def __getstate__(self):
-        return {'field_class': self._field_class}
-
-    def __setstate__(self, state):
-        self.__init__(field_class=state['field_class'])
+        result = self.__dict__.copy()
+        result['_field'] = None
+        result['_lon'] = None
+        return result
 
     def __call__(self, lon, l, b, r):
         return self.extract(lon, l, b, r)
 
     def extract(self, lon, l, b, r):
+        """
+        Extract a feature vector from a postage stamp description
+
+        Paramters
+        ---------
+        lon : int
+            The longitude of the field to use
+        l : float
+            Bubble center longitude, degrees
+        b : float
+            Bubble center latitude, degrees
+        r : float
+            Bubble radius, degrees
+
+        Returns
+        -------
+        A feature vector. The contents of the feature vector
+        are configured by subclasses
+        """
         self.setup_field(lon)
         rgb = self._field.extract_stamp(l, b, r, limits=[1, 97])
 
@@ -49,16 +80,19 @@ class Extractor(object):
 
 
 class RGBExtractor(Extractor):
+    """Extracts RGB intensity values"""
     def _extract_rgb(self, rgb):
         return rgb
 
 
 class MultiWaveletExtractor(Extractor):
+    """Extracts normalized wavelet coefficients"""
     def _extract_rgb(self, rgb):
         return normalize(multiwavelet_from_rgb(rgb).reshape(1, -1))
 
 
 class CompressionExtractor(Extractor):
+    """Extracts the length of the compressed string of each color"""
     def _extract_rgb(self, rgb):
         clen = lambda x: np.array([len(zlib.compress(x.tostring()))])
         return np.hstack(map(clen, [rgb, rgb[:, :, 0], rgb[:, :, 1],
@@ -66,6 +100,7 @@ class CompressionExtractor(Extractor):
 
 
 class RawStatsExtractor(Extractor):
+    """Extracts percentiles, differences from each channel"""
     def extract(self, lon, l, b, r):
         self.setup_field(lon)
         rgb = self._field.extract_stamp(l, b, r, do_scale=False)
@@ -92,8 +127,9 @@ class RawStatsExtractor(Extractor):
 
 
 class EllipseExtractor(Extractor):
-    def __init__(self, field_class=Field):
-        super(EllipseExtractor, self).__init__(field_class)
+    """ Measures overlap with ellipses for each channel"""
+    def __init__(self):
+        super(EllipseExtractor, self).__init__()
 
         aas = np.linspace(8, 18, 3)
         bs = aas
@@ -140,8 +176,9 @@ class EllipseExtractor(Extractor):
 
 
 class RingExtractor(Extractor):
-    def __init__(self, field_class=Field):
-        super(RingExtractor, self).__init__(field_class)
+    """ Measures overlap with rings """
+    def __init__(self):
+        super(RingExtractor, self).__init__()
 
         y, x = np.mgrid[0:40, 0:40].astype(np.float)
         r = np.hypot(y - 20, x - 20)
@@ -168,9 +205,9 @@ class RingExtractor(Extractor):
 class CompositeExtractor(Extractor):
     composite_classes = []
 
-    def __init__(self, field_class=Field):
-        super(CompositeExtractor, self).__init__(field_class)
-        self.extractors = [c(field_class) for c in self.composite_classes]
+    def __init__(self):
+        super(CompositeExtractor, self).__init__()
+        self.extractors = [c() for c in self.composite_classes]
 
     def _extract_rgb(self, rgb):
         return np.hstack(e._extract_rgb(rgb) for e in self.extractors)
