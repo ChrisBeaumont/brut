@@ -150,3 +150,32 @@ class TestCascade(object):
                      ]:
             with pytest.raises(ValueError) as exc:
                 func()
+
+    def _assert_clones(self, clf, clf2):
+        assert clf2.layer_recall == clf.layer_recall
+        assert clf2.false_pos == clf.false_pos
+        assert clf2.max_layers == clf.max_layers
+        assert clf2.verbose == clf.verbose
+
+        assert clf.base_clf is not clf2.base_clf
+        assert isinstance(clf2.base_clf, type(clf.base_clf))
+
+    def test_clone(self):
+        from sklearn.base import clone
+
+        clf = CascadedBooster(layer_recall=0.33, false_pos=0.12,
+                              max_layers=99, verbose=5)
+        clf2 = clone(clf)
+
+        self._assert_clones(clf, clf2)
+        assert not hasattr(clf2, 'estimators_')
+        assert not hasattr(clf2, 'bias_')
+
+    def test_pickle(self):
+        from cPickle import dumps, loads
+
+        clf2 = loads(dumps(self.clf))
+
+        np.testing.assert_array_equal(self.clf.decision_function(self.X),
+                                      clf2.decision_function(self.X))
+        self._assert_clones(clf2, self.clf)

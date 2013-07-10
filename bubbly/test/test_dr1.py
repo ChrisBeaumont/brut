@@ -38,7 +38,18 @@ class TestLocationGenerator(object):
     def test_off_fields(self, mod3):
         from itertools import islice
         lc = LocationGenerator(mod3)
-        assert not lc.cloud
         for p in islice(lc.negatives_iterator(), 0, 1000):
             assert (p[0] % 3) == mod3
             assert (int(np.round(p[1])) % 3) == mod3
+
+    def test_pickle(self):
+        from cPickle import loads, dumps
+
+        lc = LocationGenerator(1)
+
+        ser = dumps(lc)
+        assert len(ser) < 200
+
+        lc2 = loads(ser)
+
+        assert lc2 == lc

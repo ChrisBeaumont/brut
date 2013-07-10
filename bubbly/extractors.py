@@ -24,6 +24,15 @@ class Extractor(object):
         self._lon = lon
         self._field = self._field_class(lon)
 
+    def __getstate__(self):
+        return {'field_class': self._field_class}
+
+    def __setstate__(self, state):
+        self.__init__(field_class=state['field_class'])
+
+    def __call__(self, lon, l, b, r):
+        return self.extract(lon, l, b, r)
+
     def extract(self, lon, l, b, r):
         self.setup_field(lon)
         rgb = self._field.extract_stamp(l, b, r, limits=[1, 97])

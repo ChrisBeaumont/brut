@@ -11,15 +11,18 @@ from cloud import running_on_cloud
 
 from .util import overlap
 
+
 def _has_field(lon, cloud=False):
     """Return True if image data exists for a given longitude"""
-
+    base = os.path.join(os.path.dirname(__file__), 'data', 'galaxy',
+                        'registered')
     if not cloud:
-        return os.path.exists("galaxy/registered/%3.3i_i4.fits" % lon) and \
-            os.path.exists("galaxy/registered/%3.3i_mips.fits" % lon)
+        return os.path.exists(os.path.join(base, "%3.3i_i4.fits" % lon)) and \
+            os.path.exists(os.path.join(base, "%3.3i_mips.fits" % lon))
     else:
         return bucket.exists("%3.3i_i4.fits" % lon) and \
             bucket.exists("%3.3i_mips.fits" % lon)
+
 
 def _on_args(catalog, row):
     """Given the row of the DR1 catalog, turn into
@@ -31,6 +34,10 @@ def _on_args(catalog, row):
 
 
 def _high_quality_on_locations():
+    pth = os.path.join(os.path.dirname(__file__), 'data', 'hiq.pkl')
+    if os.path.exists(pth):
+        return pickle.load(open(pth))
+
     infile = os.path.join(os.path.dirname(__file__), 'data', 'stamps2.h5')
     cat = get_catalog()
     on_id = np.array(map(int, h5py.File(infile, 'r')['on'].keys()))
@@ -45,19 +52,26 @@ def _high_quality_on_locations():
 
     #...and hit rate > 0.3
     good = good & (cat[on_id, -1] > 0.3)
-    return [_on_args(cat, row) for row in on_id[good]]
+    result = [_on_args(cat, row) for row in on_id[good]]
+
+    with open(pth, 'w') as outfile:
+        pickle.dump(result, outfile)
+
+    return result
 
 
 def get_catalog():
+    pth = os.path.join(os.path.dirname(__file__), 'data', 'catalog.pkl')
+
     try:
         import cloud
-        cloud.bucket.sync_from_cloud('catalog.pkl')
-        return pickle.load(open('catalog.pkl'))
+        cloud.bucket.sync_from_cloud('catalog.pkl', pth)
+        return pickle.load(open(pth))
     except:
         pass
 
-    if os.path.exists('catalog.pkl'):
-        return pickle.load(open('catalog.pkl'))
+    if os.path.exists(pth):
+        return pickle.load(open(pth))
 
     from MySQLdb import connect
     db = connect(host='localhost', user='beaumont', db='mwp')
@@ -66,7 +80,7 @@ def get_catalog():
                    'thickness, hit_rate from clean_bubbles_anna')
     cat = np.array([map(float, row) for row in cursor.fetchall()])
 
-    with open('catalog.pkl', 'w') as outfile:
+    with open(pth, 'w') as outfile:
         pickle.dump(cat, outfile)
 
     return cat
@@ -89,6 +103,11 @@ class LocationGenerator(object):
             raise ValueError("mod3 must be one of (0, 1, 2)")
         self.mod3 = int(mod3)
         self.cloud = running_on_cloud()
+
+    def __eq__(self, other):
+        if not isinstance(other, LocationGenerator):
+            return False
+        return self.mod3 == other.mod3
 
     def positives(self):
         return [p for p in on_stamp_params() if (p[0] % 3) == self.mod3]

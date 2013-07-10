@@ -9,7 +9,8 @@ from .util import _sample_and_scale
 class Field(object):
     def __init__(self, lon, path=None):
         self.lon = lon
-        path = path or os.path.join(os.path.dirname(__file__), 'galaxy')
+        path = path or os.path.join(os.path.dirname(__file__), 'data',
+                                    'galaxy')
         self.path = path
 
         i4 = os.path.join(path, 'registered', '%3.3i_i4.fits' % lon)
