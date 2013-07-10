@@ -5,6 +5,7 @@ from skimage.transform import resize
 from sklearn.metrics import recall_score
 import numpy as np
 
+
 def lon_offset(x, y):
     """Return angular separation between two offsets which possibly
     straddle l=0
@@ -20,7 +21,7 @@ def lon_offset(x, y):
     >>> lon_offset(181, 0)
     179
     """
-    return min( abs(x - y), abs(x + 360 - y), abs(x - (y + 360)))
+    return min(abs(x - y), abs(x + 360 - y), abs(x - (y + 360)))
 
 
 def up_to_date(inputs, output):
@@ -42,6 +43,7 @@ def up_to_date(inputs, output):
     itime = max(os.path.getmtime(input) for input in inputs)
     otime = os.path.getmtime(output)
     return otime > itime
+
 
 def scale(x, mask=None, limits=None):
     """Scale an array as is done in MWP paper
@@ -176,6 +178,7 @@ def merge_detections(detections):
     result = _decimate(dist, scores)
     return np.asarray(detections)[result]
 
+
 def normalize(arr):
     """Flatten and L2-normalize an array, and return"""
     arr = arr.ravel().astype(np.float)
@@ -184,6 +187,8 @@ def normalize(arr):
 
 
 ely, elx = np.mgrid[:40, :40]
+
+
 def ellipse(x0, y0, a, b, dr, theta0):
     """Make a 40x40 pix image of an ellipse"""
 
@@ -214,8 +219,7 @@ def _sample_and_scale(i4, mips, do_scale, limits):
     else:
         mips[~mask] = np.nan
 
-
-    rgb = np.dstack((mips, i4, i4*0))
+    rgb = np.dstack((mips, i4, i4 * 0))
     return rgb
 
 
@@ -223,6 +227,7 @@ def _unpack(tree):
     if isinstance(tree, np.ndarray):
         return tree.ravel()
     return np.hstack(_unpack(t) for t in tree)
+
 
 def multiwavelet_from_rgb(rgb):
     from scipy.fftpack import dct

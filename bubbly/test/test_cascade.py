@@ -8,6 +8,7 @@ import pytest
 from ..cascade import CascadedBooster, _recall_bias, _fpos_bias
 from ..util import false_pos
 
+
 def test_recall_bias():
 
     df = np.arange(5)
@@ -15,6 +16,7 @@ def test_recall_bias():
     for thresh in [0, .1, .2, .21, .5, 1]:
         bias = _recall_bias(df, thresh)
         assert (df >= bias).mean() >= thresh
+
 
 def test_fpos_bias():
     df = np.arange(5)
@@ -60,7 +62,8 @@ class TestCascade(object):
         for i, yp in enumerate(clf.staged_decision_function(x)):
             good = yp > 0
             #df for positive examples == df for last stage
-            expect = clf.estimators_[i].decision_function(x[good]) - clf.bias[i]
+            expect = clf.estimators_[i].decision_function(x[
+                                                          good]) - clf.bias[i]
             np.testing.assert_array_equal(yp[good].ravel(), expect.ravel())
 
         np.testing.assert_array_equal(clf.decision_function(x), yp)

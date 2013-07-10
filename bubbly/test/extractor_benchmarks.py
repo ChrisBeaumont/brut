@@ -25,6 +25,7 @@ def _build(ex_cls, path):
     with open(path, 'w') as outfile:
         outfile.write(hashes(ex_cls))
 
+
 def build_all_benchmarks():
     for ex in benchmark_extractors:
         _build(ex, benchmark_file(ex))

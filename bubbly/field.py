@@ -68,7 +68,6 @@ class Field(object):
         return rgb
 
 
-
 class CloudField(Field):
 
     def __init__(self, lon):

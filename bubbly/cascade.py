@@ -102,8 +102,8 @@ def _set_bias(clf, X, Y, recall, fpos, tneg):
         examples)
     """
     df = clf.decision_function(X).ravel()
-    r = _recall_bias(df[Y==1], recall)
-    f = _fpos_bias(df[Y==1], fpos, tneg)
+    r = _recall_bias(df[Y == 1], recall)
+    f = _fpos_bias(df[Y == 1], fpos, tneg)
     return min(r, f)
 
 
@@ -186,7 +186,6 @@ class CascadedBooster(BaseEstimator, ClassifierMixin):
             result[good] = c.decision_function(X[good]) - b
         return result
 
-
     def fit(self, X, Y):
         """ Fit the casecaded boosting model """
 
@@ -207,7 +206,7 @@ class CascadedBooster(BaseEstimator, ClassifierMixin):
                 self.converged = True
                 break
 
-            if np.unique(Y).size == 1:  #down to a single class
+            if np.unique(Y).size == 1:  # down to a single class
                 self.converged = True
                 break
 
@@ -253,7 +252,7 @@ class CascadedBooster(BaseEstimator, ClassifierMixin):
         """
         clf = clone(self.base_clf)
         clf.fit(X, Y)
-        bias = _recall_bias(clf.decision_function(X[Y==1]).ravel(),
+        bias = _recall_bias(clf.decision_function(X[Y == 1]).ravel(),
                             self.layer_recall)
         self.estimators_.append(clf)
         self.bias.append(bias)

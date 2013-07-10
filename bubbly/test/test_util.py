@@ -16,12 +16,14 @@ def monotonic(x, y):
     ind = np.argsort(x)
     return (np.sort(y) == y[ind]).all()
 
+
 def check_scale(x, y):
 
     assert y.dtype == np.uint8
     assert y.max() == 255
     assert y.min() == 0
     assert monotonic(x, y)
+
 
 def test_scale():
 
@@ -30,7 +32,7 @@ def test_scale():
     y = scale(x)
     check_scale(x, y)
 
-    y2 = scale(x, limits = [4, 99.8])
+    y2 = scale(x, limits=[4, 99.8])
     check_scale(x, y2)
     assert (y2 >= y).all()
 
@@ -68,6 +70,7 @@ def test_resample():
     y = resample(x, (40, 40))
     z = resample(y, (20, 20))
     assert np.abs((z - x)).max() < .1
+
 
 def test_false_pos():
 

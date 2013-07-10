@@ -52,8 +52,9 @@ class MultiWaveletExtractor(Extractor):
 class CompressionExtractor(Extractor):
     def _extract_rgb(self, rgb):
         clen = lambda x: np.array([len(zlib.compress(x.tostring()))])
-        return np.hstack(map(clen, [rgb, rgb[:,:,0], rgb[:,:,1],
-                                    rgb[:,:,0] - rgb[:,:,1]])).reshape(1, -1)
+        return np.hstack(map(clen, [rgb, rgb[:, :, 0], rgb[:, :, 1],
+                                    rgb[:, :, 0] - rgb[:, :, 1]])).reshape(1, -1)
+
 
 class RawStatsExtractor(Extractor):
     def extract(self, lon, l, b, r):
@@ -80,6 +81,7 @@ class RawStatsExtractor(Extractor):
 
         return np.hstack([sums, rper, gper, rdiff, gdiff]).reshape(1, -1)
 
+
 class EllipseExtractor(Extractor):
     def __init__(self, field_class=Field):
         super(EllipseExtractor, self).__init__(field_class)
@@ -96,7 +98,7 @@ class EllipseExtractor(Extractor):
                                      for x0, y0, a, b, dr, theta
                                      in params])
 
-        templates /= np.sqrt((templates**2).sum(axis=0))
+        templates /= np.sqrt((templates ** 2).sum(axis=0))
         self.templates = templates
         self.params = params
 
@@ -121,7 +123,7 @@ class EllipseExtractor(Extractor):
         return result[0], fun(result[0])
 
     def _extract_rgb(self, rgb):
-        r, g = rgb[:,:,0], rgb[:,:,1]
+        r, g = rgb[:, :, 0], rgb[:, :, 1]
 
         rp, rs = self._fit_ellipse(r)
         gp, gs = self._fit_ellipse(g)
@@ -137,12 +139,12 @@ class RingExtractor(Extractor):
 
         rs = np.linspace(1., 20, 7)
         ts = np.array([2, 4, 6, 8, 10, 15, 20]).astype(np.float)
-        self.rings = np.column_stack(np.exp(-(r - rr)**2 / tt**2).ravel()
+        self.rings = np.column_stack(np.exp(-(r - rr) ** 2 / tt ** 2).ravel()
                                      for rr, tt in product(rs, ts))
 
     def _extract_rgb(self, rgb):
-        r = rgb[:,:,0].astype(np.float).ravel()
-        g = rgb[:,:,1].astype(np.float).ravel()
+        r = rgb[:, :, 0].astype(np.float).ravel()
+        g = rgb[:, :, 1].astype(np.float).ravel()
         rnorm = r / np.maximum(r.sum(), 1)
         gnorm = g / np.maximum(g.sum(), 1)
         result = np.hstack([np.dot(r, self.rings),
@@ -170,12 +172,14 @@ class RingWaveletCompositeExtractor(CompositeExtractor):
 
 
 class RingWaveletCompressionExtractor(CompositeExtractor):
-    composite_classes = [RingExtractor, MultiWaveletExtractor, CompressionExtractor]
+    composite_classes = [RingExtractor, MultiWaveletExtractor,
+                         CompressionExtractor]
 
 
 class RingWaveletCompressionStatExtractor(CompositeExtractor):
     composite_classes = [RingExtractor, MultiWaveletExtractor,
                          CompressionExtractor, RawStatsExtractor]
+
     def extract(self, lon, l, b, r):
         return np.hstack(e.extract(lon, l, b, r).ravel()
                          for e in self.extractors).reshape(1, -1)
