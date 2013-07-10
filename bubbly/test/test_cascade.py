@@ -63,7 +63,7 @@ class TestCascade(object):
             good = yp > 0
             #df for positive examples == df for last stage
             expect = clf.estimators_[i].decision_function(x[
-                                                          good]) - clf.bias[i]
+                                                          good]) - clf.bias_[i]
             np.testing.assert_array_equal(yp[good].ravel(), expect.ravel())
 
         np.testing.assert_array_equal(clf.decision_function(x), yp)
@@ -104,7 +104,7 @@ class TestCascade(object):
         self.clf.fit(self.X, self.Y)
 
         assert not self.clf.converged
-        assert len(self.clf.bias) == 4
+        assert len(self.clf.bias_) == 4
 
     def test_impossible_filter(self):
         self.clf.layer_recall = 1
@@ -113,7 +113,7 @@ class TestCascade(object):
 
         self.clf.fit(self.X, self.Y)
         assert not self.clf.converged
-        assert len(self.clf.bias) < 4
+        assert len(self.clf.bias_) < 4
 
     def test_separable_fit(self):
         self.clf.layer_recall = .5

@@ -164,7 +164,7 @@ class CascadedBooster(BaseEstimator, ClassifierMixin):
     def staged_predict(self, X):
         """Predict classification of `X` for each iteration"""
         result = np.ones(X.shape[0], dtype=np.int)
-        for b, c in zip(self.bias, self.estimators_):
+        for b, c in zip(self.bias_, self.estimators_):
             result &= (c.decision_function(X).ravel() >= b)
             yield result.copy()
 
@@ -172,7 +172,7 @@ class CascadedBooster(BaseEstimator, ClassifierMixin):
     def staged_decision_function(self, X):
         """Compute decision function of `X` for each iteration"""
         result = np.zeros(X.shape[0])
-        for c, b in zip(self.estimators_, self.bias):
+        for c, b in zip(self.estimators_, self.bias_):
             good = result >= 0
             result[good] = c.decision_function(X[good]) - b
             yield result.copy()
@@ -181,7 +181,7 @@ class CascadedBooster(BaseEstimator, ClassifierMixin):
     def decision_function(self, X):
         """Compute the decision function of `X`"""
         result = np.zeros(X.shape[0])
-        for c, b in zip(self.estimators_, self.bias):
+        for c, b in zip(self.estimators_, self.bias_):
             good = result >= 0
             result[good] = c.decision_function(X[good]) - b
         return result
@@ -196,7 +196,7 @@ class CascadedBooster(BaseEstimator, ClassifierMixin):
         tneg = nex - tpos
 
         F = [1.0]
-        self.bias = []
+        self.bias_ = []
         self.estimators_ = []
 
         for i in range(self.max_layers):
@@ -218,7 +218,7 @@ class CascadedBooster(BaseEstimator, ClassifierMixin):
                              self.false_pos, tneg)
 
             self.estimators_.append(clf)
-            self.bias.append(bias)
+            self.bias_.append(bias)
 
             Yp = clf.decision_function(X).ravel() >= bias
             F[-1] = 1.0 * ((Y == 0) & Yp).sum() / tneg
@@ -255,7 +255,7 @@ class CascadedBooster(BaseEstimator, ClassifierMixin):
         bias = _recall_bias(clf.decision_function(X[Y == 1]).ravel(),
                             self.layer_recall)
         self.estimators_.append(clf)
-        self.bias.append(bias)
+        self.bias_.append(bias)
 
     @needs_fit
     def predict(self, X):
