@@ -2,7 +2,7 @@ import os
 from cPickle import load, dump
 
 from skimage.transform import resize
-from sklearn.metrics import recall_score
+from sklearn.metrics import recall_score, auc_score
 import numpy as np
 
 
@@ -97,6 +97,7 @@ def summary(clf, x, y):
 
     print 'False Positive: %0.3f' % false_pos(y, yp)
     print 'Recall:         %0.3f' % recall(y, yp)
+    print 'AUC:            %0.3f' % auc_score(y, yp)
     print 'Accuracy:       %0.3f' % (yp == y).mean()
 
 
@@ -198,13 +199,13 @@ def ellipse(x0, y0, a, b, dr, theta0):
     return np.exp(-np.log(r / r0) ** 2 / (dr / 10.) ** 2)
 
 
-def _sample_and_scale(i4, mips, do_scale, limits):
+def _sample_and_scale(i4, mips, do_scale, limits, shp=(40, 40)):
 
-    i4 = resample(i4, (40, 40))
-    mips = resample(mips, (40, 40))
+    i4 = resample(i4, shp)
+    mips = resample(mips, shp)
 
-    assert i4.shape == (40, 40), i4.shape
-    assert mips.shape == (40, 40), mips.shape
+    assert i4.shape == shp, i4.shape
+    assert mips.shape == shp, mips.shape
 
     mask = mips > 0
 

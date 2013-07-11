@@ -6,6 +6,8 @@ from itertools import product
 
 import numpy as np
 from scipy.optimize import fmin_l_bfgs_b as minimize
+from skimage.morphology import disk
+from skimage.filter.rank import percentile_autolevel
 
 from .field import new_field
 from .util import normalize, ellipse, multiwavelet_from_rgb
@@ -15,6 +17,19 @@ class Extractor(object):
     def __init__(self):
         self._lon = None
         self._field = None
+        self.shp = (40, 40)
+        self.preprocessors = []
+
+    def _preprocess_rgb(self, rgb):
+        for p in self.preprocessors:
+            rgb = p(rgb)
+        return rgb
+
+    def _clear_field(self):
+        import gc
+        self._field = None
+        self._lon = None
+        gc.collect()
 
     def setup_field(self, lon):
         """
@@ -25,16 +40,26 @@ class Extractor(object):
         lon : int
             The longitude of the field to load
 
+        Returns
+        -------
+        The current field
+
         Notes
         -----
         Fields are cached so, if setup_field is called multiple times in
         a row with the same `lon` value, the data are only loaded once
         """
         if lon == self._lon:
-            return
-        self._field = None  # de-allocate memory, for cloud machines
+            return self._field
+        self._clear_field() # de-allocate memory, for cloud machines
         self._lon = lon
         self._field = new_field(lon)
+        return self._field
+
+    def force_set_field(self, field):
+        self._clear_field()
+        self._lon = field.lon
+        self._field = field
 
     def __getstate__(self):
         result = self.__dict__.copy()
@@ -66,17 +91,21 @@ class Extractor(object):
         are configured by subclasses
         """
         self.setup_field(lon)
-        rgb = self._field.extract_stamp(l, b, r, limits=[1, 97])
+        shp = self.shp
+        rgb = self._field.extract_stamp(l, b, r, limits=[1, 97], shp=shp)
 
         if rgb is None:
-            rgb = np.zeros((40, 40, 3), dtype=np.uint8)
+            rgb = np.zeros((shp[0], shp[1], 3), dtype=np.uint8)
         elif (rgb[:, :, 1] == 0).mean() > 0.1:
-            rgb = np.zeros((40, 40, 3), dtype=np.uint8)
+            rgb = np.zeros((shp[0], shp[1], 3), dtype=np.uint8)
 
+        rgb = self._preprocess_rgb(rgb)
         return self._extract_rgb(rgb)
 
     def _extract_rgb(self, rgb):
         raise NotImplementedError()
+
+
 
 
 class RGBExtractor(Extractor):
@@ -210,7 +239,7 @@ class CompositeExtractor(Extractor):
         self.extractors = [c() for c in self.composite_classes]
 
     def _extract_rgb(self, rgb):
-        return np.hstack(e._extract_rgb(rgb) for e in self.extractors)
+        return np.hstack(e._extract_rgb(rgb).ravel() for e in self.extractors)
 
 
 class RingWaveletCompositeExtractor(CompositeExtractor):
@@ -227,5 +256,23 @@ class RingWaveletCompressionStatExtractor(CompositeExtractor):
                          CompressionExtractor, RawStatsExtractor]
 
     def extract(self, lon, l, b, r):
+        #prevent field data from being loaded 4 times
+        for e in self.extractors:
+            e._clear_field()
+
+        f = self.extractors[0].setup_field(lon)
+        for e in self.extractors[1:]:
+            e.force_set_field(f)
+
         return np.hstack(e.extract(lon, l, b, r).ravel()
                          for e in self.extractors).reshape(1, -1)
+
+
+def enhance_contrast(rgb):
+    """A preprocessing step that enhances the local contrast of each
+    color channel"""
+    s = rgb.shape
+    d = disk(s[0] / 5)
+    for i in range(3):
+        rgb[:, :, i] = percentile_autolevel(rgb[:, :, i], d, p0=.1, p1=.9)
+    return rgb
