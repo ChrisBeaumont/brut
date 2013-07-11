@@ -34,30 +34,11 @@ def _on_args(catalog, row):
 
 
 def _high_quality_on_locations():
-    pth = os.path.join(os.path.dirname(__file__), 'data', 'hiq.pkl')
-    if os.path.exists(pth):
-        return pickle.load(open(pth))
-
-    infile = os.path.join(os.path.dirname(__file__), 'data', 'stamps2.h5')
+    pth = os.path.join(os.path.dirname(__file__), 'data', 'vetted.txt')
+    rows = map(int, open(pth).readlines())
     cat = get_catalog()
-    on_id = np.array(map(int, h5py.File(infile, 'r')['on'].keys()))
 
-    rgbs = h5py.File(infile, 'r')['on'].values()
-
-    #has green channel...
-    def has_green(rgb):
-        return (rgb[:, :, 1] == 0).mean() < 0.3
-
-    good = np.array([has_green(r) for r in rgbs], dtype=np.bool)
-
-    #...and hit rate > 0.3
-    good = good & (cat[on_id, -1] > 0.3)
-    result = [_on_args(cat, row) for row in on_id[good]]
-
-    with open(pth, 'w') as outfile:
-        pickle.dump(result, outfile)
-
-    return result
+    return [_on_args(cat, row) for row in rows]
 
 
 def get_catalog():
