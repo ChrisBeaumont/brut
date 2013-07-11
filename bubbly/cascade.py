@@ -122,7 +122,7 @@ def needs_fit(func):
 class CascadedBooster(BaseEstimator, ClassifierMixin):
     def __init__(self, layer_recall=0.99, false_pos=1e-3,
                  max_layers=5, verbose=0,
-                 base_clf=None):
+                 base_clf=None, weak_learner_params=None):
         """ A cascaded boosting classifier
 
         Based on the Viola and Jones (2001) Cascade
@@ -147,8 +147,9 @@ class CascadedBooster(BaseEstimator, ClassifierMixin):
             cascade. Defaults to sklearn.ensemble.GradientBoostingClassifier()
         """
 
+        weak_learner_params = weak_learner_params or {}
         if base_clf is None:
-            base_clf = GradientBoostingClassifier()
+            base_clf = GradientBoostingClassifier(**weak_learner_params)
 
         self.base_clf = base_clf
 
