@@ -22,14 +22,22 @@ class TestModel(object):
         self.on = on
         self.off = off
 
-    def test_first_fit(self):
+    def test_fit(self):
 
-        self.m.first_fit(self.on, self.off)
+        self.m.fit(self.on, self.off)
         assert hasattr(self.m.estimator, 'estimators_')
+
+    def test_retrain(self):
+
+        self.m.fit(self.on, self.off)
+        m2 = Model(extractor=RGBExtractor(),
+                  locator=LocationGenerator())
+        m2.retrain(self.m.training_data)
+        assert m2.training_data == self.m.training_data
 
     def test_add_layer(self):
 
-        self.m.first_fit(self.on, self.off)
+        self.m.fit(self.on, self.off)
         n = len(self.m.estimator.estimators_)
         self.m.add_layer(self.on, self.off)
         assert len(self.m.estimator.estimators_) == n + 1
@@ -40,7 +48,7 @@ class TestModel(object):
         assert len(fp) == 5
         assert self.m.predict(fp).all()
 
-        self.m.first_fit(self.on, fp)
+        self.m.fit(self.on, fp)
 
         assert not self.m.predict(fp).all()
 
@@ -49,7 +57,7 @@ class TestModel(object):
 
     def test_retained_data(self):
 
-        self.m.first_fit(self.on, self.off)
+        self.m.fit(self.on, self.off)
         self.m.add_layer(self.on[:1], self.off[:1])
         self.m.add_layer(self.on[1:], self.off[1:])
 
@@ -70,7 +78,7 @@ class TestModel(object):
 
     def test_io(self):
 
-        self.m.first_fit(self.on, self.off)
+        self.m.fit(self.on, self.off)
         self.m.add_layer(self.on, self.off)
 
         try:
