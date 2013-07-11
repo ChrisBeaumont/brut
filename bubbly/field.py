@@ -1,4 +1,5 @@
 import os
+import warnings
 
 from cloud import running_on_cloud
 from astropy.io import fits
@@ -6,6 +7,9 @@ from astropy.wcs import WCS
 import numpy as np
 
 from .util import _sample_and_scale
+
+#turn off internally-triggered astropy WCS warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 def new_field(lon):
     """Create and return a new field appropriate
@@ -26,8 +30,8 @@ class Field(object):
         i4 = os.path.join(path, 'registered', '%3.3i_i4.fits' % lon)
         mips = os.path.join(path, 'registered', '%3.3i_mips.fits' % lon)
 
-        self.i4 = fits.getdata(i4)
-        self.mips = fits.getdata(mips)
+        self.i4 = fits.getdata(i4, memmap=True)
+        self.mips = fits.getdata(mips, memmap=True)
         self.wcs = WCS(fits.getheader(i4))
 
     def __getitem__(self, field, *slices):
@@ -51,7 +55,26 @@ class Field(object):
                 yield (self.lon, l, b, rad)
                 r = int(r * 1.25)
 
-    def extract_stamp(self, lon, lat, size, do_scale=True, limits=None):
+    def extract_stamp(self, lon, lat, size, do_scale=True, limits=None,
+                      shp=(40, 40)):
+        """
+        Extract an RGB Postage stamp at the requested position
+
+        Parameters
+        ----------
+        lon : float
+            Longitude of center, deg
+        lat : float
+            Latitude of center, deg
+        size : float
+            Size of stamp, deg
+        do_scale : bool (optional)
+            If True, apply a square-root transfer function
+        limits : tuple of (lo_percent, hi_percent)
+            If provided, clip the intensities at the specified percentiles
+        shp : tuple of (ysize, xsize) (optional)
+            The pixel size of the output stamp
+        """
 
         lb = np.array([[lon, lat]])
         x, y = self.wcs.wcs_world2pix(lb, 0).ravel()
@@ -72,7 +95,7 @@ class Field(object):
 
         i4 = self.i4[bt:tp:stride, lt:rt:stride]
         mips = self.mips[bt:tp:stride, lt:rt:stride]
-        rgb = _sample_and_scale(i4, mips, do_scale, limits)
+        rgb = _sample_and_scale(i4, mips, do_scale, limits, shp=shp)
         return rgb
 
 
@@ -87,6 +110,6 @@ class CloudField(Field):
         sync_from_cloud(i4)
         sync_from_cloud(mips)
 
-        self.i4 = fits.getdata(i4)
-        self.mips = fits.getdata(mips)
+        self.i4 = fits.getdata(i4, memmap=True)
+        self.mips = fits.getdata(mips, memmap=True)
         self.wcs = WCS(fits.getheader(i4))
