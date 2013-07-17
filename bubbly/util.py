@@ -101,6 +101,29 @@ def summary(clf, x, y):
     print 'Accuracy:       %0.3f' % (yp == y).mean()
 
 
+def roc_curve(y, yp, **kwargs):
+    import matplotlib.pyplot as plt
+    from sklearn.metrics import roc_curve
+
+    fp, tp, th = roc_curve(y, yp)
+    plt.plot(fp, tp, **kwargs)
+
+    plt.xlabel('False Positive')
+    plt.ylabel('True Positive')
+    ax = plt.gca()
+
+    ax.grid(which='major', axis='x',
+            linewidth=0.75, linestyle='-', color='0.75')
+    ax.grid(which='minor', axis='x',
+            linewidth=0.25, linestyle='-', color='0.75')
+    ax.grid(which='major', axis='y',
+            linewidth=0.75, linestyle='-', color='0.75')
+    ax.grid(which='minor', axis='y',
+            linewidth=0.25, linestyle='-', color='0.75')
+
+    return fp, tp
+
+
 def rfp_curve(yp, Y, **kwargs):
     """ Plot the false positive rate as a function of recall """
     import matplotlib.pyplot as plt
@@ -254,3 +277,24 @@ def overlap(l, b, r, l0, b0, r0):
         r_ratio = np.maximum(r / r0[i], r0[i] / r)
         overlap |= ((dr < thresh) & (r_ratio < 5))
     return overlap
+
+def chunk(x, n):
+    """
+    Split a sequence into approximately n continguous chunks
+
+    Parameters
+    ----------
+    x : list-like
+        a sequence to extract. Must support len() and slicing
+
+    Outputs
+    -------
+    A list of approximately n slices of x. The length of the list
+    will always be <= n
+    """
+    nx = len(x)
+    if n < 1 or n > nx:
+       raise ValueError("n must be >0, and <= %i: %i" % (n, nx))
+
+    chunksz = int(np.ceil(1. * nx / n))
+    return [x[i: i + chunksz] for i in range(0, nx, chunksz)]

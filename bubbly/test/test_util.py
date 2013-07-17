@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 
 from ..util import *
@@ -84,3 +85,20 @@ def test_false_pos():
 
     yp = np.array([False, False, False, False])
     assert false_pos(y, yp) == 0
+
+
+def test_chunk():
+
+    x = range(5)
+
+    assert chunk(x, 1) == [x]
+    assert chunk(x, 2) == [[0, 1, 2], [3, 4]]
+    assert chunk(x, 3) == [[0, 1], [2, 3], [4]]
+    assert chunk(x, 4) == [[0, 1], [2, 3], [4]]
+    assert chunk(x, 5) == [[0], [1], [2], [3], [4]]
+
+    with pytest.raises(ValueError):
+        chunk(x, 6)
+
+    with pytest.raises(ValueError):
+        chunk(x, 0)
