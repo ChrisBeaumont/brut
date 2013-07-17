@@ -258,6 +258,15 @@ class CascadedBooster(BaseEstimator, ClassifierMixin):
         self.estimators_.append(clf)
         self.bias_.append(bias)
 
+    def pop_cascade_layer(self):
+        """Remove one layer from the cascade"""
+        if not hasattr(self, 'estimators_') or len(self.estimators_) == 0:
+            raise IndexError("No cascade layers to remove")
+        self.estimators_.pop()
+        self.bias_.pop()
+        self.converged = False
+
+
     @needs_fit
     def predict(self, X):
         """Predict class for X"""

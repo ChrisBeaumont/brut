@@ -51,7 +51,8 @@ class TestCascade(object):
         recall_i = clf.layer_recall
         for i, yp in enumerate(clf.staged_predict(x), 1):
             assert recall_score(y, yp) >= (recall_i ** i)
-        np.testing.assert_array_equal(yp, clf.predict(x))
+        if len(clf.estimators_) > 0:
+            np.testing.assert_array_equal(yp, clf.predict(x))
 
     def check_fpos_constraints(self, clf, x, y):
         # if classifier converged, false pos rate on training data <= false_pos
@@ -66,7 +67,8 @@ class TestCascade(object):
                                                           good]) - clf.bias_[i]
             np.testing.assert_array_equal(yp[good].ravel(), expect.ravel())
 
-        np.testing.assert_array_equal(clf.decision_function(x), yp)
+        if len(clf.estimators_) > 0:
+            np.testing.assert_array_equal(clf.decision_function(x), yp)
 
     def check_staged_predict(self, clf, x, y):
         #staged predict and decision function are consistent
@@ -179,3 +181,22 @@ class TestCascade(object):
         np.testing.assert_array_equal(self.clf.decision_function(self.X),
                                       clf2.decision_function(self.X))
         self._assert_clones(clf2, self.clf)
+
+    def test_pop_layer(self):
+        l = len(self.clf.estimators_)
+        self.clf.pop_cascade_layer()
+        assert len(self.clf.estimators_) == l - 1
+        assert len(self.clf.bias_) == l - 1
+
+    def test_pop_empty(self):
+        l = len(self.clf.estimators_)
+        for i in range(l):
+            self.clf.pop_cascade_layer()
+
+        with pytest.raises(IndexError):
+            self.clf.pop_cascade_layer()
+
+
+        with pytest.raises(IndexError):
+            clf = CascadedBooster()
+            clf.pop_cascade_layer()
