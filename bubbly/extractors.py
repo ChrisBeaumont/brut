@@ -208,16 +208,28 @@ class RingExtractor(Extractor):
     """ Measures overlap with rings """
     def __init__(self):
         super(RingExtractor, self).__init__()
+        self._template_shp = None
 
-        y, x = np.mgrid[0:40, 0:40].astype(np.float)
-        r = np.hypot(y - 20, x - 20)
 
-        rs = np.linspace(1., 20, 7)
+    def _prepare_templates(self, shp):
+        if self._template_shp == shp:
+            return
+        self._template_shp = shp
+
+        s = shp[0]
+        y, x = np.mgrid[0:s, 0:s].astype(np.float)
+        r = np.hypot(y - s / 2, x - s / 2)
+
+        rs = np.linspace(1., s / 2, 7)
         ts = np.array([2, 4, 6, 8, 10, 15, 20]).astype(np.float)
+        ts *= (s / 2) / 20
         self.rings = np.column_stack(np.exp(-(r - rr) ** 2 / tt ** 2).ravel()
                                      for rr, tt in product(rs, ts))
 
+
     def _extract_rgb(self, rgb):
+        self._prepare_templates(rgb.shape)
+
         r = rgb[:, :, 0].astype(np.float).ravel()
         g = rgb[:, :, 1].astype(np.float).ravel()
         rnorm = r / np.maximum(r.sum(), 1)
