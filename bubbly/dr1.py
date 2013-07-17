@@ -51,7 +51,7 @@ def get_catalog():
 
 
 def on_stamp_params():
-    """Iterate over high quality + examples,
+    """Iterate over medium quality + examples,
     yield tuples of (field_lon, lcen, bcen, r)
 
     These can be fed to Extractor objects
@@ -59,8 +59,19 @@ def on_stamp_params():
     for l, b, r in _high_quality_on_locations():
         yield int(np.round(l)), l, b, r
 
+def highest_quality_on_params():
+    """Iterate over highest-confidence + examples
+    yield tuples of (field_lon, lcen, bcen, r)
+    """
+    pth = os.path.join(os.path.dirname(__file__), 'data', 'best', 'data.pkl')
+    data = pickle.load(open(pth))
+    for k, (l, b, r) in data.items():
+        if os.path.exists(os.path.join(os.path.dirname(pth), k)):
+            yield int(np.round(l)), l, b, r
+
 
 class LocationGenerator(object):
+    positive_generator = staticmethod(on_stamp_params)
 
     def __init__(self, mod3=0):
         if int(mod3) != mod3 or int(mod3) not in [0, 1, 2]:
@@ -72,13 +83,16 @@ class LocationGenerator(object):
             return False
         return self.mod3 == other.mod3
 
+    def _longitude_check(self, l):
+        return l % 3 == self.mod3
+
     def positives(self):
-        return [p for p in on_stamp_params() if (p[0] % 3) == self.mod3]
+        return [p for p in self.positive_generator() if self._longitude_check(p[0])]
 
     def _random_field(self):
         while True:
             l = np.random.randint(0, 361, 1)[0]
-            if ((l % 3) == self.mod3) and _has_field(l):
+            if self._longitude_check(l) and _has_field(l):
                 return  l
 
     def negatives_iterator(self):
@@ -104,3 +118,7 @@ class LocationGenerator(object):
 
             for i in range(l.size):
                 yield lon, l[i], b[i], r[i]
+
+class WideLocationGenerator(LocationGenerator):
+    def _longitude_check(self, l):
+        return l % 3 != self.mod3
