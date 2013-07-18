@@ -8,10 +8,10 @@ logging.getLogger(__name__).setLevel(logging.DEBUG)
 
 import numpy as np
 from sklearn.base import clone
-import cloud
+
 
 from .decorators import profile
-from .util import chunk
+from .util import chunk, cloud_map
 
 
 class Model(object):
@@ -115,28 +115,16 @@ class Model(object):
             If provided, re-fetch a previous patch
             a previous batch of PiCloud jobs
         """
-        if jobs is None:
-            logging.getLogger(__name__).debug("Scanning for %i false "
-                                              "positives on PiCloud" % num)
-            jobs = cloud.map(self.false_positives, [num / workers] * workers,
-                             _env='mwp', _type='c2')
-            logging.getLogger(__name__).info(
-                "To re-fetch results, use \n"
-                "cloud_false_positives(jobs=range(%i, %i))",
-                min(jobs), max(jobs) + 1)
-        return [r for j in cloud.result(jobs) for r in j]
+        results = cloud_map(self.false_positives,
+                            [num / workers] * workers,
+                            jobs)
+        return [r for j in results for r in j]
 
     def cloud_decision_function(self, x, workers=10, jobs=None):
-        if jobs is None:
-            logging.getLogger(__name__).debug("Classifying %i features "
-                                              "on PiCloud" % len(x))
-            jobs = cloud.map(self.decision_function, chunk(x, workers),
-                             _env='mwp', _type='c2')
-            logging.getLogger(__name__).info(
-                "To re-fetch results, use \n"
-                "cloud_decision_function(jobs=range(%i, %i))",
-                min(jobs), max(jobs) + 1)
-        return np.hstack(cloud.result(jobs))
+        results = cloud_map(self.decision_function,
+                            chunk(x, workers),
+                            jobs)
+        return np.hstack(results)
 
     def decision_function(self, x):
         """
@@ -153,7 +141,7 @@ class Model(object):
         """
         result = np.empty(len(x))
         for i, ex in enumerate(x):
-            X, _ = self._make_x_y([ex], None).reshape(1, -1)
+            X, _ = self.make_xy([ex], None).reshape(1, -1)
             df = self.classifier.decision_function(X).ravel()
             result[i] = df
         return result
