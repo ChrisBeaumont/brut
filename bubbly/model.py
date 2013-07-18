@@ -10,21 +10,16 @@ import numpy as np
 from sklearn.base import clone
 import cloud
 
-from .cascade import CascadedBooster
 from .decorators import profile
 from .util import chunk
 
 
 class Model(object):
 
-    def __init__(self, extractor, locator, cascade_params=None,
-                 weak_learner_params=None):
+    def __init__(self, extractor, locator, classifier):
+        """ Bundles together an extractor, locator, and classifier """
 
-        cascade_params = cascade_params or {}
-        wkwargs = weak_learner_params or {}
-
-        self.estimator = CascadedBooster(weak_learner_params=wkwargs,
-                                         **cascade_params)
+        self.classifier = classifier
         self.extractor = extractor
         self.locator = locator
         self.training_data = []
@@ -37,7 +32,7 @@ class Model(object):
         return on, off
 
     @profile
-    def _make_xy(self, on, off):
+    def make_xy(self, on, off):
         x = np.vstack(self.extractor(*o).reshape(1, -1) for o in on + off)
         y = np.hstack((np.ones(len(on), dtype=np.int),
                        np.zeros(len(off), dtype=np.int)))
@@ -76,11 +71,14 @@ class Model(object):
         if not hasattr(params[0], '__len__'):
             params = [params]
 
-        if not hasattr(self.estimator, 'estimators_'):
+        x, y = self.make_xy(params, [])
+        try:
+            return self.classifier.predict(x)
+        except ValueError:  # not yet fit
+            #having an empty model predict 1
+            #makes it convenient to generate
+            #initial false positives
             return np.ones(len(params), dtype=np.int)
-
-        x, y = self._make_xy(params, [])
-        return self.estimator.predict(x)
 
     @profile
     def false_positives(self, num):
@@ -156,20 +154,20 @@ class Model(object):
         result = np.empty(len(x))
         for i, ex in enumerate(x):
             X, _ = self._make_x_y([ex], None).reshape(1, -1)
-            df = self.estimator.decision_function(X).ravel()
+            df = self.classifier.decision_function(X).ravel()
             result[i] = df
         return result
 
     def _reset(self):
         self.training_data = []
-        self.estimator = clone(self.estimator)
+        self.classifier = clone(self.classifier)
 
     def add_layer(self, on=None, off=None):
         on, off = self._default_on_off(on, off)
         self.training_data.append(dict(pos=on, neg=off))
 
-        x, y = self._make_xy(on, off)
-        self.estimator.add_cascade_layer(x, y)
+        x, y = self.make_xy(on, off)
+        self.classifier.add_cascade_layer(x, y)
 
     def retrain(self, training_data):
         self.fit(training_data[0]['pos'], training_data[0]['neg'])
@@ -182,6 +180,6 @@ class Model(object):
         on, off = self._default_on_off(on, off)
         self.training_data = [dict(pos=on, neg=off)]
 
-        x, y = self._make_xy(on, off)
+        x, y = self.make_xy(on, off)
         logging.getLogger(__name__).debug("Fitting")
-        self.estimator.fit(x, y)
+        self.classifier.fit(x, y)

@@ -8,13 +8,15 @@ import pytest
 from ..model import Model
 from ..extractors import RGBExtractor
 from ..dr1 import LocationGenerator
+from ..cascade import CascadedBooster
 
 
 class TestModel(object):
 
     def setup_method(self, method):
         m = Model(extractor=RGBExtractor(),
-                  locator=LocationGenerator())
+                  locator=LocationGenerator(),
+                  classifier=CascadedBooster())
         on = m.locator.positives()[:5]
         off = list(islice(m.locator.negatives_iterator(), 0, 5))
 
@@ -25,22 +27,23 @@ class TestModel(object):
     def test_fit(self):
 
         self.m.fit(self.on, self.off)
-        assert hasattr(self.m.estimator, 'estimators_')
+        assert hasattr(self.m.classifier, 'estimators_')
 
     def test_retrain(self):
 
         self.m.fit(self.on, self.off)
         m2 = Model(extractor=RGBExtractor(),
-                  locator=LocationGenerator())
+                  locator=LocationGenerator(),
+                  classifier=CascadedBooster())
         m2.retrain(self.m.training_data)
         assert m2.training_data == self.m.training_data
 
     def test_add_layer(self):
 
         self.m.fit(self.on, self.off)
-        n = len(self.m.estimator.estimators_)
+        n = len(self.m.classifier.estimators_)
         self.m.add_layer(self.on, self.off)
-        assert len(self.m.estimator.estimators_) == n + 1
+        assert len(self.m.classifier.estimators_) == n + 1
 
     def test_false_positives(self):
 
