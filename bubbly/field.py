@@ -53,7 +53,7 @@ class Field(object):
             rad = r * 2. / 3600.
             for l, b in lb:
                 yield (self.lon, l, b, rad)
-                r = int(r * 1.25)
+            r = int(r * 1.25)
 
     def extract_stamp(self, lon, lat, size, do_scale=True, limits=None,
                       shp=(40, 40)):
