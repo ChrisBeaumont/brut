@@ -8,6 +8,7 @@ import numpy as np
 from scipy.optimize import fmin_l_bfgs_b as minimize
 from skimage.morphology import disk
 from skimage.filter.rank import percentile_autolevel
+from skimage.feature import daisy
 
 from .field import new_field
 from .util import normalize, ellipse, multiwavelet_from_rgb
@@ -243,6 +244,24 @@ class RingExtractor(Extractor):
         return result.reshape(1, -1)
 
 
+class DaisyExtractor(Extractor):
+    def _extract_rgb(self, rgb):
+        kwargs = dict(step=rgb.shape[0]/5, radius=rgb.shape[0] / 10, rings=2,
+                      histograms=6, orientations=8)
+        return np.hstack(daisy(rgb[:, :, i], **kwargs).ravel() for i in [0, 1])
+
+
+class MultiViewExtractor(Extractor):
+    def __init__(self, orig):
+        self.orig = orig
+
+    def extract(self, lon, l, b, r):
+        return np.hstack((self.orig.extract(lon, l, b, r),
+                          self.orig.extract(lon, l, b, r / 2),
+                          self.orig.extract(lon, l, b, r * 2),
+                          self.orig.extract(lon, l, b + r / 2, r)))
+
+
 class CompositeExtractor(Extractor):
     composite_classes = []
 
@@ -278,6 +297,11 @@ class RingWaveletCompressionStatExtractor(CompositeExtractor):
 
         return np.hstack(e.extract(lon, l, b, r).ravel()
                          for e in self.extractors).reshape(1, -1)
+
+
+class ManyManyExtractors(CompositeExtractor):
+    composite_classes = [RingExtractor, MultiWaveletExtractor,
+                         CompressionExtractor, DaisyExtractor]
 
 
 def enhance_contrast(rgb):

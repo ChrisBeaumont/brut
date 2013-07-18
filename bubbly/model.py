@@ -141,7 +141,8 @@ class Model(object):
         """
         result = np.empty(len(x))
         for i, ex in enumerate(x):
-            X, _ = self.make_xy([ex], None).reshape(1, -1)
+            X, _ = self.make_xy([ex], [])
+            X = X.reshape(1, -1)
             df = self.classifier.decision_function(X).ravel()
             result[i] = df
         return result
