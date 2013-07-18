@@ -83,16 +83,16 @@ class LocationGenerator(object):
             return False
         return self.mod3 == other.mod3
 
-    def _longitude_check(self, l):
+    def valid_longitude(self, l):
         return l % 3 == self.mod3
 
     def positives(self):
-        return [p for p in self.positive_generator() if self._longitude_check(p[0])]
+        return [p for p in self.positive_generator() if self.valid_longitude(p[0])]
 
     def _random_field(self):
         while True:
             l = np.random.randint(0, 361, 1)[0]
-            if self._longitude_check(l) and _has_field(l):
+            if self.valid_longitude(l) and _has_field(l):
                 return  l
 
     def negatives_iterator(self):
@@ -120,5 +120,5 @@ class LocationGenerator(object):
                 yield lon, l[i], b[i], r[i]
 
 class WideLocationGenerator(LocationGenerator):
-    def _longitude_check(self, l):
+    def valid_longitude(self, l):
         return l % 3 != self.mod3

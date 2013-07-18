@@ -151,6 +151,9 @@ class Model(object):
         self.classifier = clone(self.classifier)
 
     def add_layer(self, on=None, off=None):
+        #XXX This only makes sense if self.classifier is a CascadedBooster
+        #    remove?
+
         on, off = self._default_on_off(on, off)
         self.training_data.append(dict(pos=on, neg=off))
 
@@ -162,8 +165,28 @@ class Model(object):
         for td in training_data[1:]:
             self.add_layer(td['pos'], td['neg'])
 
+    def check_location(self, pars):
+        """
+        Test whether a sequence of parameters
+        have longitudes compatible with the locator object
+
+        Parameters
+        ----------
+        pars : list of postage stamp parameters
+
+        Returns
+        -------
+        True if all parameters are at longitudes allowed by locator.
+        False otherwise
+        """
+        return all(self.locator.valid_longitude(p[0]) for p in pars)
+
     @profile
     def fit(self, on=None, off=None):
+        if not (self.check_location(on) and self.check_location(off)):
+            raise ValueError("Cannot use this data for fitting: "
+                             "longitude incompatible with Locator")
+
         self._reset()
         on, off = self._default_on_off(on, off)
         self.training_data = [dict(pos=on, neg=off)]

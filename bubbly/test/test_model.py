@@ -104,3 +104,10 @@ class TestModel(object):
             assert self.m.predict(o[i])
             for j in range(i + 1, len(o)):
                 assert o[i] != o[j]
+
+    def test_invalid_fit_longitude(self):
+        with pytest.raises(ValueError) as exc:
+            bad_par = (31, 31, 0, .1)
+            self.m.fit(on=[bad_par],
+                       off=[bad_par])
+        assert exc.value.args[0].startswith('Cannot use this data')
