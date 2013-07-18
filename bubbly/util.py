@@ -1,5 +1,6 @@
 import os
 from cPickle import load, dump
+import logging
 
 from skimage.transform import resize
 from sklearn.metrics import recall_score, auc_score
@@ -103,9 +104,9 @@ def summary(clf, x, y):
 
 def roc_curve(y, yp, **kwargs):
     import matplotlib.pyplot as plt
-    from sklearn.metrics import roc_curve
+    from sklearn.metrics import roc_curve as skroc
 
-    fp, tp, th = roc_curve(y, yp)
+    fp, tp, th = skroc(y, yp)
     plt.plot(fp, tp, **kwargs)
 
     plt.xlabel('False Positive')
@@ -278,6 +279,7 @@ def overlap(l, b, r, l0, b0, r0):
         overlap |= ((dr < thresh) & (r_ratio < 5))
     return overlap
 
+
 def chunk(x, n):
     """
     Split a sequence into approximately n continguous chunks
@@ -294,7 +296,37 @@ def chunk(x, n):
     """
     nx = len(x)
     if n < 1 or n > nx:
-       raise ValueError("n must be >0, and <= %i: %i" % (n, nx))
+        raise ValueError("n must be >0, and <= %i: %i" % (n, nx))
 
     chunksz = int(np.ceil(1. * nx / n))
     return [x[i: i + chunksz] for i in range(0, nx, chunksz)]
+
+
+def cloud_map(func, args, jobs):
+    """
+    Call cloud.map, with some standard logging info
+
+    Parameters
+    ----------
+    func : function to map
+    args : list of mapping arguments
+    jobs : list of pre-existing job ids, or None
+        If present, will fetch the results from these jobs
+
+    Returns
+    -------
+    Result of cloud.map
+    """
+    import cloud
+
+    if jobs is None:
+        log = logging.getLogger(func.__module__)
+
+        log.debug(
+            "Starting %i jobs on PiCloud for %s" % (len(args), func.__name__))
+        jobs = cloud.map(func, args, _env='mwp', _type='c2')
+        log.debug("To re-fetch results, use \n"
+                  "%s(jobs=range(%i, %i))" %
+                  (func.__name__, min(jobs), max(jobs) + 1))
+
+    return cloud.result(jobs)
