@@ -2,6 +2,7 @@ from itertools import islice, ifilter
 import warnings
 import logging
 import cPickle as pickle
+from zlib import compress, decompress
 import json
 
 logging.getLogger(__name__).setLevel(logging.DEBUG)
@@ -215,6 +216,18 @@ class ModelGroup(object):
             return self.m3
         else:
             raise ValueError("Invalid longitude: %s" % lon)
+
+    def save(self, path):
+        result = pickle.dumps([self.m1, self.m2, self.m3])
+        result = compress(result, 9)
+        with open(path, 'w') as outfile:
+            outfile.write(result)
+
+    @classmethod
+    def load(cls, path):
+        models = pickle.loads(decompress(open(path)))
+        return cls(*models)
+
 
     def decision_function(self, params):
         return np.hstack(self._choose_model(p[0]).decision_function(p)
