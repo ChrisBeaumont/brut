@@ -31,7 +31,6 @@ class Model(object):
             off = self.false_positives(3 * len(on))
         return on, off
 
-    @profile
     def make_xy(self, on, off):
         x = np.vstack(self.extractor(*o).reshape(1, -1) for o in on + off)
         y = np.hstack((np.ones(len(on), dtype=np.int),
@@ -195,3 +194,34 @@ class Model(object):
         x, y = self.make_xy(on, off)
         logging.getLogger(__name__).debug("Fitting")
         self.classifier.fit(x, y)
+        return self
+
+
+class ModelGroup(object):
+    """Combine 3 models with different Locators,
+    to classify data at all longitudes"""
+
+    def __init__(self, m1, m2, m3):
+        self.m1 = m1
+        self.m2 = m2
+        self.m3 = m3
+
+    def _choose_model(self, lon):
+        if lon % 3 == 0:
+            return self.m1
+        elif lon % 3 == 1:
+            return self.m2
+        elif lon % 3 == 2:
+            return self.m3
+        else:
+            raise ValueError("Invalid longitude: %s" % lon)
+
+    def decision_function(self, params):
+        return np.hstack(self._choose_model(p[0]).decision_function(p)
+                         for p in params)
+
+    def cloud_decision_function(self, params, workers=10, jobs=None):
+        results = cloud_map(self.decision_function,
+                            chunk(params, workers),
+                            jobs)
+        return np.hstack(results)

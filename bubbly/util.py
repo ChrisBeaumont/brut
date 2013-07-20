@@ -324,7 +324,8 @@ def cloud_map(func, args, jobs):
 
         log.debug(
             "Starting %i jobs on PiCloud for %s" % (len(args), func.__name__))
-        jobs = cloud.map(func, args, _env='mwp', _type='c2')
+        jobs = cloud.map(func, args, _env='mwp', _type='c2',
+                         _label=func.__name__)
         log.debug("To re-fetch results, use \n"
                   "%s(jobs=range(%i, %i))" %
                   (func.__name__, min(jobs), max(jobs) + 1))
