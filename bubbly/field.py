@@ -1,5 +1,6 @@
 import os
 import warnings
+import logging
 
 from cloud import running_on_cloud
 from astropy.io import fits
@@ -11,13 +12,33 @@ from .util import _sample_and_scale
 #turn off internally-triggered astropy WCS warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-def new_field(lon):
+_cached_field = None
+
+
+def get_field(lon):
     """Create and return a new field appropriate
-    for running locally or on PiCloud"""
+    for running locally or on PiCloud
+
+    The previous return value is cached,
+    to avoid repeated I/O for repeated
+    requests for the same field
+    """
+    global _cached_field
+
+    if _cached_field is not None and _cached_field.lon == lon:
+        return _cached_field
+
+    del _cached_field
+
+    logging.getLogger(__name__).debug("Loading a new field at l=%i" % lon)
 
     if running_on_cloud():
-        return CloudField(lon)
-    return Field(lon)
+        result = CloudField(lon)
+    else:
+        result = Field(lon)
+
+    _cached_field = result
+    return result
 
 
 class Field(object):

@@ -10,14 +10,12 @@ from skimage.morphology import disk
 from skimage.filter.rank import percentile_autolevel
 from skimage.feature import daisy
 
-from .field import new_field
+from .field import get_field
 from .util import normalize, ellipse, multiwavelet_from_rgb
 
 
 class Extractor(object):
     def __init__(self):
-        self._lon = None
-        self._field = None
         self.shp = (40, 40)
         self.preprocessors = []
 
@@ -25,48 +23,6 @@ class Extractor(object):
         for p in self.preprocessors:
             rgb = p(rgb)
         return rgb
-
-    def _clear_field(self):
-        import gc
-        self._field = None
-        self._lon = None
-        gc.collect()
-
-    def setup_field(self, lon):
-        """
-        Prepare an extractor by loading an appropriate field
-
-        Parameters
-        ----------
-        lon : int
-            The longitude of the field to load
-
-        Returns
-        -------
-        The current field
-
-        Notes
-        -----
-        Fields are cached so, if setup_field is called multiple times in
-        a row with the same `lon` value, the data are only loaded once
-        """
-        if lon == self._lon:
-            return self._field
-        self._clear_field() # de-allocate memory, for cloud machines
-        self._lon = lon
-        self._field = new_field(lon)
-        return self._field
-
-    def force_set_field(self, field):
-        self._clear_field()
-        self._lon = field.lon
-        self._field = field
-
-    def __getstate__(self):
-        result = self.__dict__.copy()
-        result['_field'] = None
-        result['_lon'] = None
-        return result
 
     def __call__(self, lon, l, b, r):
         return self.extract(lon, l, b, r)
@@ -91,9 +47,8 @@ class Extractor(object):
         A feature vector. The contents of the feature vector
         are configured by subclasses
         """
-        self.setup_field(lon)
         shp = self.shp
-        rgb = self._field.extract_stamp(l, b, r, limits=[1, 97], shp=shp)
+        rgb = get_field(lon).extract_stamp(l, b, r, limits=[1, 97], shp=shp)
 
         if rgb is None:
             rgb = np.zeros((shp[0], shp[1], 3), dtype=np.uint8)
@@ -132,8 +87,7 @@ class CompressionExtractor(Extractor):
 class RawStatsExtractor(Extractor):
     """Extracts percentiles, differences from each channel"""
     def extract(self, lon, l, b, r):
-        self.setup_field(lon)
-        rgb = self._field.extract_stamp(l, b, r, do_scale=False)
+        rgb = get_field(lon).extract_stamp(l, b, r, do_scale=False)
         if rgb is None:
             rgb = np.zeros((40, 40, 3), dtype=np.uint8)
         elif (rgb[:, :, 1] == 0).mean() > 0.1:
@@ -287,14 +241,6 @@ class RingWaveletCompressionStatExtractor(CompositeExtractor):
                          CompressionExtractor, RawStatsExtractor]
 
     def extract(self, lon, l, b, r):
-        #prevent field data from being loaded 4 times
-        for e in self.extractors:
-            e._clear_field()
-
-        f = self.extractors[0].setup_field(lon)
-        for e in self.extractors[1:]:
-            e.force_set_field(f)
-
         return np.hstack(e.extract(lon, l, b, r).ravel()
                          for e in self.extractors).reshape(1, -1)
 
