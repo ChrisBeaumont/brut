@@ -87,7 +87,12 @@ class LocationGenerator(object):
         return l % 3 == self.mod3
 
     def positives(self):
-        return [p for p in self.positive_generator() if self.valid_longitude(p[0])]
+        return sorted([p for p in self.positive_generator()
+                      if self.valid_longitude(p[0])])
+
+    def cv_positives(self):
+        return sorted([p for p in self.positive_generator()
+                      if not self.valid_longitude(p[0])])
 
     def _random_field(self):
         while True:
@@ -95,8 +100,15 @@ class LocationGenerator(object):
             if self.valid_longitude(l) and _has_field(l):
                 return  l
 
-    def negatives_iterator(self):
+    def negatives_iterator(self, samples_per_field=None):
         """Yield an infinite sequence of offset stamp parameters
+
+        Parameters
+        ----------
+        samples_per_field : int (optional)
+            How many samples to generate before switching
+            longitues by >1 deg. Tuning this can improve
+            IO performance.
 
         Yields
         ------
@@ -107,7 +119,9 @@ class LocationGenerator(object):
 
         while True:
             lon = self._random_field()
-            nsample = 30000 if running_on_cloud() else 500
+            nsample = samples_per_field
+            if nsample is None:
+                nsample = 30000 if running_on_cloud() else 500
 
             l = np.random.uniform(-.5, .5, nsample) + lon
             b = np.random.uniform(-.8, .8, nsample)
