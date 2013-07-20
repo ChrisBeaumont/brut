@@ -225,7 +225,7 @@ class ModelGroup(object):
 
     @classmethod
     def load(cls, path):
-        models = pickle.loads(decompress(open(path)))
+        models = pickle.loads(decompress(open(path).read()))
         return cls(*models)
 
 
