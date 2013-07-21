@@ -208,12 +208,9 @@ class ModelGroup(object):
         self.m3 = m3
 
     def _choose_model(self, lon):
-        if lon % 3 == 0:
-            return self.m1
-        elif lon % 3 == 1:
-            return self.m2
-        elif lon % 3 == 2:
-            return self.m3
+        for m in [self.m1, self.m2, self.m3]:
+            if not m.locator.valid_longitude(lon):
+                return m
         else:
             raise ValueError("Invalid longitude: %s" % lon)
 
@@ -230,7 +227,7 @@ class ModelGroup(object):
 
 
     def decision_function(self, params):
-        return np.hstack(self._choose_model(p[0]).decision_function(p)
+        return np.hstack(self._choose_model(p[0]).decision_function([p])
                          for p in params)
 
     def cloud_decision_function(self, params, workers=10, jobs=None):

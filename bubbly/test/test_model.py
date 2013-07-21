@@ -5,9 +5,9 @@ from itertools import islice
 import numpy as np
 import pytest
 
-from ..model import Model
+from ..model import Model, ModelGroup
 from ..extractors import RGBExtractor
-from ..dr1 import LocationGenerator
+from ..dr1 import LocationGenerator, WideLocationGenerator
 from ..cascade import CascadedBooster
 
 
@@ -111,3 +111,18 @@ class TestModel(object):
             self.m.fit(on=[bad_par],
                        off=[bad_par])
         assert exc.value.args[0].startswith('Cannot use this data')
+
+class TestModelGroup(object):
+
+    def test_correct_dispatch(self):
+        ms = [Model(extractor=RGBExtractor(),
+                    locator=WideLocationGenerator(i),
+                    classifier=CascadedBooster()) for i in [0, 1, 2]]
+        mg = ModelGroup(*ms)
+        assert mg._choose_model(0) == ms[0]
+        assert mg._choose_model(1) == ms[1]
+        assert mg._choose_model(2) == ms[2]
+        assert mg._choose_model(3) == ms[0]
+
+        with pytest.raises(ValueError):
+            mg._choose_model(4.1)

@@ -49,6 +49,13 @@ def get_catalog():
 
     return pickle.load(open(pth))
 
+def bubble_params(bubbles):
+    c = get_catalog()
+    result = []
+    for b in bubbles:
+        args = _on_args(c, b)
+        result.append([int(np.round(args[0])), args[0], args[1], args[2]])
+    return result
 
 def on_stamp_params():
     """Iterate over medium quality + examples,
