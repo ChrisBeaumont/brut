@@ -40,7 +40,6 @@ def _high_quality_on_locations():
 
     return [_on_args(cat, row) for row in rows]
 
-
 def get_catalog():
     pth = os.path.join(os.path.dirname(__file__), 'data', 'catalog.pkl')
 
@@ -49,8 +48,10 @@ def get_catalog():
 
     return pickle.load(open(pth))
 
-def bubble_params(bubbles):
+def bubble_params(bubbles=None):
     c = get_catalog()
+    bubbles = bubbles or range(len(c))
+
     result = []
     for b in bubbles:
         args = _on_args(c, b)
