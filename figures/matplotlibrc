@@ -254,7 +254,7 @@ backend.qt4        : PySide
 
 ### FIGURE
 # See http://matplotlib.sourceforge.net/api/figure_api.html#matplotlib.figure.Figure
-#figure.figsize   : 8, 6    # figure size in inches
+#figure.figsize   : 6, 6    # figure size in inches
 #figure.dpi       : 80      # figure dots per inch
 #figure.facecolor : 0.75    # figure facecolor; 0.75 is scalar gray
 #figure.edgecolor : white   # figure edgecolor
@@ -394,4 +394,4 @@ grid.linewidth : 2
 axes.axisbelow : true
 lines.linewidth : 2
 font.size : 12
-figure.figsize : 4, 4
+figure.figsize : 3.5, 3.5
