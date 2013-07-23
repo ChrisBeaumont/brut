@@ -1,0 +1,179 @@
+\documentclass[preprint]{aastex}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifxetex
+  \usepackage{fontspec,xltxtra,xunicode}
+  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+\else
+  \ifluatex
+    \usepackage{fontspec}
+    \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
+  \else
+    \usepackage[utf8]{inputenc}
+  \fi
+\fi
+%\usepackage{aastex}
+\usepackage{graphicx}
+\makeatletter
+\ifxetex
+  \usepackage[setpagesize=false, % page size defined by xetex
+              unicode=false, % unicode breaks when used with xetex
+              xetex,
+              colorlinks=true,
+              linkcolor=blue]{hyperref}
+\else
+  \usepackage[unicode=true,
+              colorlinks=true,
+              linkcolor=blue]{hyperref}
+\fi
+
+\newcommand{\todo}[1]{{\color[rgb]{0, .5, .5} TODO: #1}}
+
+\begin{document}
+
+\title{An Algorithmically-Derived Catalog of Bubbles in the Galaxy}
+\shortauthors{Beaumont et al}
+\author{Christopher N. Beaumont$^{1,2}$, Alyssa A. Goodman$^2$, Jonathan P. Williams$^1$}
+\affil{$^1$Institute for Astronomy, University of Hawai'i, 2680 Woodlawn Drive, Honolulu HI 96822;  beaumont@ifa.hawaii.edu}
+\affil{$^2$Harvard-Smithsonian Center for Astrophysics, 60 Garden St., Cambridge MA 02138}
+
+\section{Introduction}
+\label{sec:intro}
+
+\subsection{Interstellar Bubbles}
+\label{sec:bubbles}
+
+\subsection{Previous Surveys}
+\label{sec:bubbles}
+
+\begin{figure*}
+\includegraphics[trim= .7in 0 0 0, clip]{gallery}
+\caption{Different astrophysical objects in the MWP catalog. a) ``Canonical'' wind-blown bubbles and HII regions. b) shells
+without 8 $\mu$m PAH emission (likely supernovae and planetary nebulae). c) 24 $\mu$m-dark filaments and globules. d) Other structured
+ISM, that isn't clearly a stellar-cleared}
+\label{fig:gallery}
+\end{figure*}
+
+\subsection{Manual and Automatic Classification in Astronomy}
+\label{sec:benefits}
+
+In terms of accuracy, humans still outperform computers in most image-based pattern recognition tasks. Because of this, morphologically complex
+structures in the ISM (including supernova remnants, outflows, bubbles, HII regions, molecular and infrared dark clouds, and planetary nebulae) are still
+traditionally cataloged manually. Human classification has several disadvantages, however.
+
+First, human classification is time consuming, and people-hours are a limited resource. Even by enlisting large communities of citizen scientists, data from next generation surveys will be too large to search exhaustively. For example, the $>$ 35,000 citizen scientists of the Milky Way Project classified roughly 45 GB of image data from the GLIMPSE I and II surveys. Current and next-generation astronomical datasets are many thousands of times larger than this, suggesting tens of millions of citizen scientists would be needed for similar exhaustive, manual searches.
+
+Second, many scientifically important tasks are not suitable for enlisting the public. Part of the success of the Milky Way Project is due to the fact that the GLIMPSE images are beautiful, contain many bubbles, and are compelling to browse through. Searches for very rare or less aesthetic objects, on the other hand, are more tedious and less likely to entice large citizen science communities. 
+
+Finally, manual classification is not easily repeatable, and hard to calibrate statistically. For example, while the MWP catalog does include a "hit-rate" denoting the fraction of users who agree upon the existence of each bubble, there is no quantitative estimate of the reliability of each bubble. Furthermore, the current set of classifications cannot be directly applied to new data.
+
+Automatic classifications driven by machine learning techniques nicely complement human classification. Such an approach easily scales to large data volumes, and is immune to some of the factors that affect humans, like boredom and fatigue. Furthermore, because algorithmic classifications are systematic and repeatable, they are easier to interpret and statistically characterize. 
+
+The principal downside to automated classification for ``hard'' tasks like bubble detection is that the algorithms typically require a ``training set'' of example objects to classify. Fortunately, the Milky Way Project catalogs just such a training set. We build an automatic bubble detector from these data in the present paper. There are several reasons to do this:
+
+\begin{enumerate}
+\item We can search for bubbles not detected by MWP citizen scientists. The main reason users may have missed bubbles is because they were presented with images at a fixed contrast. Thus, faint bubbles near bright sources may have gone undetected.
+
+\item The automatic classifier is capable of producing quantitative reliability estimates for each bubble in the MWP catalog, potentially flagging non-bubble interlopers and leading to a cleaner catalog.
+
+\item We can treat this task as a case study for complex classification tasks in future datasets, where exhaustive manual classification will not be feasible.
+
+\end{enumerate}
+
+
+\section{Classification Method}
+\label{sec:method}
+
+Our goal is to use the set of citizen-science classifications to build an automatic detector that, when presented with a region of the sky in the \textit{Spitzer} GLIMPSE and MIPSGAL surveys, accurately determines whether or not the image contains a bubble. This is a typical case of a supervised learning problem. Before we explain our approach in detail, here is a brief overview of the task:
+
+\begin{enumerate}
+\item Build a representative training set of examples of bubble and non-bubble images. This will be drived from the MWP dataset
+\item Convert each example to a numerical \textit{feature vector} that describes each object and, hopefully, distinguishes between bubbles and non-bubbles
+\item Feed the training data to a learning algorithm to build a model
+\item Use a subset of the examples not used during training to optimize the tunable parameters (so called \textit{hyper parameters}) of the learning algorithm
+\end{enumerate}
+
+\subsection{Training Data}
+\label{sec:method_training_data}
+The MWP catalog is a natural choice to build a training dataset. However, as shown in Figure \ref{fig:gallery}, the catalog as a whole contains many examples of objects that are not bubbles, and have the potential to confuse the training process. Thus, we manually curated a list of 468 objects in the catalog which were clear examples of bubbles. 
+
+We also require an example set of non-bubbles. In principle, any random region of the sky that doesn't overlap an object in the MWP catalog is a candidate negative example -- while some of these fields actually contain bubbles not in the MWP catalog, they are rare enough that they don't strongly impact the training. However, we found that selecting negative examples at random was sub-optimal. The reason for this is that most random fields are nearly empty, and easily distinguished from fields with bubbles. Classifiers generated from such a dataset incorrectly labeled nearly any field containing extended emission as a bubble.
+
+A better set of negative examples includes more examples of fields containing extended emission (Figure \ref{fig:bootstrap_neg}). We built such a collection in a bootstrapped fashion. Starting with random negative examples, we trained a classifier and used it to scan a large number (20,000) of negative fields. We then discarded half of the initial negative examples (those classified most confidently as not containing bubbles), and replaced them with a random sample of the mis-classified examples. We repeated this process several times, but found that one iteration was usually sufficient to build a good set of training data.
+
+\begin{figure}
+\includegraphics{bootstrap_neg}
+\caption{Examples of typical randomly selected negative examples (left), and ``hard''` examples (right)}
+\label{fig:bootstrap_neg}
+\end{figure}
+
+\subsection{Feature Extraction}
+\label{sec:method_feature_extraction}
+Supervised classification algorithms distinguish between classes of objects based on numerical \textit{feature vectors} that summarize each object. Feature vector design is often the most important stage of supervised classification and, unfortunately, also the hardest. The ideal feature vector captures the differences between each class of objects, so that examples from different classes occupy different sub-regions of feature space. 
+
+In the case of image classification, the most obvious choice for a feature vector is simply the numerical value of the pixels themselves. This turns out to be a poor choice, because extended objects like bubbles are characterized by correlations between hundreds or thousands of pixels, and any individual pixel is virtually irrelevant to the classification task. Machine learning algorithms generally perform better when individual elements of the feature vector are more important to the classification, and less dependent on the value of other feature vector elements.
+
+Our feature vectors have been designed based on insights in the automated face detection literature \citep{ViolaJones}.  The basic strategy is to encode a very large number ($\sim$40,000) of generic statistics about extended structures at various positions and scales. This strategy seems to be more effective then trying to tune a feature vector to the specific object being identified. While most elements in the feature vector will have no predictive power in the classification, the appropriate learning algorithm will simply ignore this information.
+
+To construct our feature vector for a given region in the sky, we first extract a (40x40) pixel postage stamp of the field from IRAC 8 $\mu$m and MIPS 24 $\mu$m images. Following a scheme similar to \cite{mwp1}, these images are intensity clipped at the 1 and 97th percentile, normalized to maximum intensity of 1, and passed through a square root transfer function. This scaling tends to do a good job of emphasizing ISM structure, making bubbles more visible to the eye. Then, the following properties were extracted from each postage stamp, and concatenated to form the feature vector:
+
+\begin{enumerate}
+\item The wavelet coefficients from the Discrete Cosine and Daub4 wavelet transforms. These coefficients encode how much power is in various spatial frequencies.
+\item The image dot product\footnote{i.e., the sum of the pixel-by-pixel product of two images} of each image with template images of rings of different size and thickness. Bubbles are morphologically similar to these templates, and presumably have larger dot products than a random intensity distribution.
+\item The byte size of each compressed postage stamp image -- images substantially more or less smooth than a bubble compress to smaller and larger files, respectively.
+\item The DAISY features of the image \citep{DAISY}, which characterize the local gradients in an image and have been useful in other feature recognition contexts.
+\end{enumerate}
+
+\subsection{Training}
+While there are many algorithms designed to learn class labels form a training set of feature vectors, we focus here on the Random Forest algorithm \citep{random forest}. Random Forests are aggregates of a simpler learning algorithm called a decision tree. A decision tree makes classifications by passing each feature vector through the nodes of a tree diagram. Each node consists of a simple boolean condition on one element of the feature vectors (e.g., $F_3 > 5$). Examples traverse the left or right paths through the tree based on whether each test is True or False, until they reach a terminal node. The terminal node contains the final classification (in the present context, ``Bubble'' or ``Not Bubble''). Decision trees are constructed in a greedy, stage-wise fashion: each boolean test is chosen to separate the set of training data into two subclasses that are more cleanly partitioned between classes (several different metrics can be used to measure the ``purity'' of the subgroups).
+
+On their own, decision trees are prone to over-fitting the training data by adding too many nodes. Random Forests overcome this problem by building several trees on different subsets of the data. The final classification is made by taking the majority vote of each subtree. This mitigates over-fitting in the individual trees, since over-fitting is sensitive to the specific subset of data used, and hence averages away. Random Forests have proven effective in many machine learning contexts.
+
+In addition to their good performance and robustness against over fitting, Random Forests have several other advantageous properties: it is possible to interpret how important each element in the feature vector is to the classification, the algorithm naturally ignores irrelevant elements of the feature vector, and it is conceptually and computationally simple.
+
+\subsection{Hyperparameter Optimization}
+The Random Forest algorithm has a small number of tunable parameters. We determined good settings for these hyper-parameters using cross validation. We partitioned the training data into two sets, and used the first set to train the algorithm with a given set of hyper-parameters. The second set of cross-validation data was used to evaluate the model. Then, the hyper parameters were adjusted and the process repeated. We chose the hyper parameters that maximized the performance on the cross-validation data.
+
+\subsection{Final Model}
+
+Classifiers cannot be used to re-classify the data used to train them, due to the possibility of over-fitting. Thus, to obtain valid classifications for all fields, we constructed three classifiers. Each classifier is trained using data from two-thirds of the sky, and used to classify the remaining third. The sky is partitioned into thirds based on the modulus of the nearest whole longitude: for example, the first classifier is trained on examples where $0.5 < (\ell \mod{3})  < 2.5$, and used to classify fields where ($\ell \mod{3}) < 0.5 ~ || ~(\ell \mod{3}) > 2.5 $
+
+\section{Results}
+\label{sec:results}
+
+The output of the RandomForest classifier is a score, which represents the fraction of trees in the forest which classify a feature vector as a bubble. This score provides more information than a simple binary classification, as it gives some sense of the confidence of the classification. Furthermore, one can adjust the threshold that defines when an object is determined to be a bubble. Increasing the threshold increases the reliability of the catalog, at the cost of completeness.
+
+One way to summarize the performance of a classifier is to plot the false positive rate (fraction of negative examples incorrectly classified) versus the true positive rate (fraction of bubbles currently classified) as the threshold varies. This is (unfortunately) referred to as the Receiver Operating Characteristic, and is shown for the three classifiers in Figure \ref{fig:roc}. The false positive rate is measured by classifying $\sim 15000$ random negative fields, and the true positive rate is measured using the high-quality subset of the MWP catalog described above.
+
+
+Figure \ref{fig:false_pos} shows the negative fields with the highest scores -- that is, those most confidently classified as bubbles. 
+
+
+\begin{figure}
+\includegraphics{roc}
+\caption{ROC}
+\label{fig:roc}
+\end{figure}
+
+
+\begin{figure}
+\includegraphics{fp}
+\caption{FP}
+\label{fig:fp}
+\end{figure}
+\subsection{Expert Validation}
+
+\subsection{Comparison to Other Catalogs}
+\label{sec:comparison}
+Milky Way Projection
+
+CP06, CP07
+
+Pallidini
+
+
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+\end{document}

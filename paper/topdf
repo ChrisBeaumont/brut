@@ -1,0 +1,1 @@
+for x in `ls *eps`; do epstopdf $x; done

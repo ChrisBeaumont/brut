@@ -7,3 +7,8 @@ build
 *#*
 *.eps
 .coverage
+*.aux
+*.log
+*.out
+*.pdf
+*.gz
