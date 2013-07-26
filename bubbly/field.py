@@ -61,19 +61,34 @@ class Field(object):
             raise ValueError("Field must be one of %s" % (fields.keys(),))
         return fields[field][slices]
 
+    def _stamps_at_radius(self, r, step=None):
+        shp = self.i4.shape
+        step = step or r / 5
+
+        y, x = np.mgrid[r / 2: shp[0] - r / 2: step,
+                        r / 2: shp[1] - r / 2: step]
+        y = y.ravel()
+        x = x.ravel()
+        lb = self.wcs.all_pix2world(np.column_stack([x, y]), 0)
+        rad = r * 2. / 3600.
+        for l, b in lb:
+            yield (self.lon, l, b, rad)
+
+
+    def small_stamps(self):
+        r = 15
+        while r < 40:
+            for field in self._stamps_at_radius(r, r/3):
+                yield field
+            r = int(r * 1.4)
+
     def all_stamps(self):
         shp = self.i4.shape
         n = max(shp[0], shp[1]) / 2
         r = 40
         while r < n:
-            y, x = np.mgrid[r / 2: shp[0] - r / 2: r / 5,
-                            r / 2: shp[1] - r / 2: r / 5]
-            y = y.ravel()
-            x = x.ravel()
-            lb = self.wcs.all_pix2world(np.column_stack([x, y]), 0)
-            rad = r * 2. / 3600.
-            for l, b in lb:
-                yield (self.lon, l, b, rad)
+            for field in self._stamps_at_radius(r):
+                yield field
             r = int(r * 1.25)
 
     def extract_stamp(self, lon, lat, size, do_scale=True, limits=None,
