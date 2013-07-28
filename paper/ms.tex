@@ -28,6 +28,7 @@
 \fi
 
 \newcommand{\todo}[1]{{\color[rgb]{0, .5, .5} TODO: #1}}
+\newcommand{\um}[0]{$\mu$m}
 
 \begin{document}
 
@@ -143,11 +144,7 @@ Classifiers cannot be used to re-classify the data used to train them, due to th
 
 The output of the RandomForest classifier is a score, which represents the fraction of trees in the forest which classify a feature vector as a bubble. This score provides more information than a simple binary classification, as it gives some sense of the confidence of the classification. Furthermore, one can adjust the threshold that defines when an object is determined to be a bubble. Increasing the threshold increases the reliability of the catalog, at the cost of completeness.
 
-One way to summarize the performance of a classifier is to plot the false positive rate (fraction of negative examples incorrectly classified) versus the true positive rate (fraction of bubbles currently classified) as the threshold varies. This is (unfortunately) referred to as the Receiver Operating Characteristic, and is shown for the three classifiers in Figure \ref{fig:roc}. The false positive rate is measured by classifying $\sim 15000$ random negative fields, and the true positive rate is measured using the high-quality subset of the MWP catalog described above.
-
-
-Figure \ref{fig:false_pos} shows the negative fields with the highest scores -- that is, those most confidently classified as bubbles. 
-
+One way to summarize the performance of a classifier is to plot the false positive rate (fraction of negative examples incorrectly classified) versus the true positive rate (fraction of bubbles currently classified) as the threshold varies. This is (unfortunately) referred to as the Receiver Operating Characteristic, and is shown for the three classifiers in Figure \ref{fig:roc}. The false positive rate is measured by classifying $\sim 15000$ random negative fields, and the true positive rate is measured using the high-quality subset of the MWP catalog described above. Recall that the set of bubbles in this test set were selected because they are very well defined. Thus, Figure \ref{fig:roc} overestimates the true positive rate when presented with more ambiguous bubbles. We compare the performance of the classifier on more representative bubbles in Section \ref{sec:case_study} and \ref{sec:user_study}.
 
 \begin{figure}
 \includegraphics{roc}
@@ -161,7 +158,36 @@ Figure \ref{fig:false_pos} shows the negative fields with the highest scores -- 
 \caption{FP}
 \label{fig:fp}
 \end{figure}
+
+
+\subsection{Building a Catalog}
+Using our automatic bubble classifier to conduct a full search for Bubbles in \textit{Spitzer} data is straightforward. The main task involves scanning the classifier over all images, at all scales. At each of these postage stamps, the classifier yields a score, representing its confidence that the given field contains a bubble. A simple threshold on this score identifies regions likely to contain a bubble -- from the discussion of Figure \ref{fig:roc} above, adjusting this threshold sets the tradeoff between completeness and reliability. 
+
+In practice, the classifier is insensitive to small adjustments to the size or location of the field. As a result, bubbles are usually associated with a cluster of postage stamps that rise above the detection threshold (Figure \ref{fig:cluster}a). We follow a simple, greedy procedure to merge these individual detections. Given a collection of postage stamp descriptions (location and scale), this procedure identifies the two nearest locations at similar scales, and discards the location assigned a lower score by the classifier This process repeats until no two fields are close enough to discard. Two fields are close enough to merge if they are separated by less than the radius of either field, and have sizes that differ by less than 50\%. Figure \ref{fig:cluster}b) shows the result of clustering.
+
+This practice works well for isolated bubbles, but occasionally fails for bubble complexes with multiple, overlapping bubbles. A more sophisticated clustering analysis may well perform better in this situation.
+
+\subsection{Classifying the l=35 field}
+\label{sec:case_study}
+To better understand the successes and failures of our classifier, we have analyzed the longitude range $34.5^\circ < \ell < 35.5^\circ$ in detail. In our first analysis, we scanned for all bubbles above a minimum size $r _{\rm min} = 80''$ \todo{Is this r or d?}, with scores above $s_{\rm min} = 0.55$. This search yielded 25 bubbles after merging. 
+
+Among the 25 automatic detections, 13 are unambiguous bubbles with clear counterparts in the MWP catalog. A further four objects appear to be bubbles as judged by the authors, but are part of bubble complexes. While the complexes are identified at least once in both catalogs, each catalog decomposes the complex slightly differently. Thus, these 4 objects don't have an obvious one-to-one relationship with an object in the MWP catalog. The automated classifier discovers two new candidate bubbles with no counterpart in the MWP catalog. \todo{Lookup what the MWP images for these regions look like. Why weren't they detected? My guess is contrast}. The remaining 6 objects in the automated catalog are false positives -- three are regions containing a bright and/or extended 24\um\, point source confused for a bubble interior, and three are regions with 8 \um\, nebulosity that don't appear shell-like.
+
+In this same region, there are 32 objects in the MWP catalog, and 11 are unassociated with the automatic detections. Seven of these are judged by the authors to be false positives -- they are mostly regions of 8 \um\, nebulosity that don't appear to be shell-like or associated with young stars.  Five appear to be true bubbles, wrongly rejected by the automated classifier. The remaining six bubbles were not considered by the classifier -- three were too close to the image edge to be analyzed, and three were smaller than the minimum search scale (we return to these objects in the next subsection). 
+
+These numbers allow us to estimate the reliability and completeness of both catalogs. Assuming that there are no other bubbles in this region with $r > s_{\rm min}$ missed by both classifiers (but still detectable from the image data), there are roughly 24 detectable bubbles in this region -- 13 bubbles present in both catalogs, 5 objects only in the MWP catalog, 2 objects only in the automated catalog, and $\sim$ 4 bubbles in bubble complexes. The automated catalog recovers 80\% (19/24) of the bubbles, and mis-classifies 24\% (6/25) of detections. The Milky Way Project performs similarly: it recovers 92\% of bubbles (22/24), and mis-classifies 23\% of its detections (7/31).
+
+\subsubsection{Searching for small bubbles}
+In the previous analysis, three bubbles in the MWP catalog were not included in the automated catalog because they were smaller than the smallest scales scanned over.  These objects would otherwise have been included -- that is, the classifier assigns each bubble a high score. We thus repeated the above analysis, with a lower value of $s_{\rm min}$. This smaller-scale scan recovers the three small bubbles missed by the first scan. In addition, it discovers 4 additional small bubbles not in the MWP catalog. \todo{Are these in the small object catalog?}. However, false positive rate is also higher -- at very small scales, the classifier more easily confuses bright 24 \um\, sources as bubble interiors, and find's more coincidental 8\um\, nebulosity that is vaguely ring-like. Overall, the false positive rate is 42\% when including a search for bubbles, and detections not in the MWP catalog are 4 times more likely to be false positives than legitimate bubbles. From this, we conclude that our classifier is not currently suitable for searching for small bubbles.
+
 \subsection{Expert Validation}
+
+To some extent, identifying bubbles in \textit{Spitzer} images is a subjective task. While the objects in Figure \ref{fig:gallery}a are unambiguously associated with star formation, other sources are not. In some cases -- particularly irregular bubbles, or those with faint or no 24\um\, emission -- it is unclear whether cavities seen in 8 \um\, data are actively sculpted by young stars, or merely the underlying structure of the undisturbed ISM. 
+
+The automatic classification is potentially well-suited to quantify this degree of ambiguity, since the classifier assigns each region a 0-1 score based on how representative it is of the training data. It's reasonable to assume that this number correlates with the intrinsic ambiguity of a particular classification, and we can test this.
+
+The MWP catalog is not an ideal dataset for assessing intrinsic classification ambiguity, since Citizen Scientists were not trained or instructed to discriminate between different astrophysical objects. Thus, while the MWP catalog does report the amount of consensus around each object, this consensus is more a measure of how shell-like an object appears, and not the consensus to which domain experts would concur a particular objects is a canonical bubble.
+
 
 \subsection{Comparison to Other Catalogs}
 \label{sec:comparison}
