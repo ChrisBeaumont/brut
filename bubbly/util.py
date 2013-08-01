@@ -224,14 +224,14 @@ def ellipse(x0, y0, a, b, dr, theta0):
 
 
 def _sample_and_scale(i4, mips, do_scale, limits, shp=(40, 40)):
+    mips = np.where(mips > 0, mips, np.nan)
 
     i4 = resample(i4, shp)
     mips = resample(mips, shp)
 
     assert i4.shape == shp, i4.shape
     assert mips.shape == shp, mips.shape
-
-    mask = mips > 0
+    mask = np.isfinite(mips)
 
     if do_scale:
         try:
