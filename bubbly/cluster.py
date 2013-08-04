@@ -39,7 +39,8 @@ def merge(stamps, scores):
 
     Returns
     -------
-    A row-subset of stamps, containing the unique objects
+    A tuple of stamps_subset, scores_subset, each containing
+    a row subset of the original arrays
     """
     stamps = np.atleast_2d(stamps)
 
@@ -55,7 +56,7 @@ def merge(stamps, scores):
         i, j = np.unravel_index(best, d.shape)
         _merge(result, d, i, j, scores)
 
-    return stamps[result]
+    return stamps[result], scores[result]
 
 
 def bubble_distance_matrix(a, b):
