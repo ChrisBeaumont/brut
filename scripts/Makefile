@@ -1,5 +1,5 @@
 
-TARGETS := ../models/full_classifier.dat ../models/benchmark_scores.json ../models/l035_scores.json ../models/bubble_scores.json ../models/l035_small_scores.json
+TARGETS := ../models/full_classifier.dat ../models/benchmark_scores.json ../models/l035_scores.json ../models/bubble_scores.json ../models/l035_small_scores.json ../models/random_scores.json
 
 MODEL := ../models/full_classifier.dat
 
@@ -19,3 +19,6 @@ all : $(TARGETS)
 
 ../models/bubble_scores.json: bubble_classify.py $(MODEL)
 	python bubble_classify.py
+
+../models/random_scores.json: random_classifications.py $(MODEL)
+	python random_classifications.py
