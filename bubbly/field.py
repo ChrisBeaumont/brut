@@ -1,6 +1,7 @@
 import os
 import warnings
 import logging
+import random
 
 from cloud import running_on_cloud
 from astropy.io import fits
@@ -81,6 +82,22 @@ class Field(object):
             for field in self._stamps_at_radius(r, r/3):
                 yield field
             r = int(r * 1.4)
+
+    def random_stamps(self, num):
+        """
+        Yield a random sample of all_stamps, chosen with replacement
+
+        Parameters
+        ----------
+        num : int
+            The number of random samples
+
+        Returns
+        -------
+        An iterator over the random sample
+        """
+        s = list(self.all_stamps())
+        return (random.choice(s) for _ in range(num))
 
     def all_stamps(self):
         shp = self.i4.shape

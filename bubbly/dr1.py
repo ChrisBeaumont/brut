@@ -10,6 +10,7 @@ import h5py
 from cloud import bucket, running_on_cloud
 
 from .util import overlap
+from .field import get_field
 
 
 def _has_field(lon):
@@ -108,6 +109,32 @@ class LocationGenerator(object):
             if self.valid_longitude(l) and _has_field(l):
                 return  l
 
+    def random_iterator(self, samples_per_field=None):
+        """Yield an infinite sequence of random stamp parameters
+
+        The random sample is generated using Field.random_stamps
+
+        Parameters
+        ----------
+        samples_per_field : int (optional)
+            How many samples to generate before switching
+            longitues by >1 deg. Tuning this can improve
+            IO performance.
+
+        Yields
+        ------
+        An infinite sequence of (field_lon, lcen, bcen, rad)
+        """
+        while True:
+            lon = self._random_field()
+            nsample = samples_per_field
+            if nsample is None:
+                nsample = 30000 if running_on_cloud() else 500
+
+            for f in get_field(lon).random_stamps(nsample):
+                yield f
+
+
     def negatives_iterator(self, samples_per_field=None):
         """Yield an infinite sequence of offset stamp parameters
 
@@ -144,3 +171,7 @@ class LocationGenerator(object):
 class WideLocationGenerator(LocationGenerator):
     def valid_longitude(self, l):
         return l % 3 != self.mod3
+
+class UnrestrictedLocationGenerator(LocationGenerator):
+    def valid_longitude(self, l):
+        return True
