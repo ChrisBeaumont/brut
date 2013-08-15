@@ -139,9 +139,13 @@ class Model(object):
         An ndarray of the decision function for each feature extracted
         from x
         """
-        result = np.empty(len(x))
+        result = np.empty(len(x)) * np.nan
         for i, ex in enumerate(x):
-            X, _ = self.make_xy([ex], [])
+            try:
+                X, _ = self.make_xy([ex], [])
+            except ValueError as e:
+                continue
+
             X = X.reshape(1, -1)
             df = self.classifier.decision_function(X).ravel()
             result[i] = df

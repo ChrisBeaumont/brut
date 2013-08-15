@@ -49,11 +49,10 @@ class Extractor(object):
         """
         shp = self.shp
         rgb = get_field(lon).extract_stamp(l, b, r, limits=[1, 97], shp=shp)
-
         if rgb is None:
-            rgb = np.zeros((shp[0], shp[1], 3), dtype=np.uint8)
+            raise ValueError("Field is out of bounds")
         elif (rgb[:, :, 1] == 0).mean() > 0.1:
-            rgb = np.zeros((shp[0], shp[1], 3), dtype=np.uint8)
+            raise ValueError("Field has no green channel")
 
         rgb = self._preprocess_rgb(rgb)
         return self._extract_rgb(rgb)
