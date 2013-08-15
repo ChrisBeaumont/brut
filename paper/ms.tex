@@ -1,18 +1,8 @@
 \documentclass[preprint]{aastex}
+
 \usepackage{amssymb,amsmath}
 \usepackage{ifxetex,ifluatex}
-\ifxetex
-  \usepackage{fontspec,xltxtra,xunicode}
-  \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
-\else
-  \ifluatex
-    \usepackage{fontspec}
-    \defaultfontfeatures{Mapping=tex-text,Scale=MatchLowercase}
-  \else
-    \usepackage[utf8]{inputenc}
-  \fi
-\fi
-%\usepackage{aastex}
+
 \usepackage{graphicx}
 \makeatletter
 \ifxetex
@@ -32,6 +22,7 @@
 
 \begin{document}
 
+
 \title{An Algorithmically-Derived Catalog of Bubbles in the Galaxy}
 \shortauthors{Beaumont et al}
 \author{Christopher N. Beaumont$^{1,2}$, Alyssa A. Goodman$^2$, Jonathan P. Williams$^1$}
@@ -45,18 +36,20 @@
 \label{sec:bubbles}
 
 \subsection{Previous Surveys}
-\label{sec:bubbles}
+\label{sec:previous_surveys}
 
 \begin{figure*}
 \includegraphics[trim= .7in 0 0 0, clip]{gallery}
 \caption{Different astrophysical objects in the MWP catalog. a) ``Canonical'' wind-blown bubbles and HII regions. b) shells
-without 8 $\mu$m PAH emission (likely supernovae and planetary nebulae). c) 24 $\mu$m-dark filaments and globules. d) Other structured
-ISM, that isn't clearly a stellar-cleared}
+without 8 $\mu$m PAH emission (likely supernovae and planetary nebulae). c) 24 $\mu$m-dark filaments and globules. d) generic
+ISM structures of unclear astrophysical origin.}
 \label{fig:gallery}
 \end{figure*}
 
 \subsection{Manual and Automatic Classification in Astronomy}
 \label{sec:benefits}
+
+
 
 In terms of accuracy, humans still outperform computers in most image-based pattern recognition tasks. Because of this, morphologically complex
 structures in the ISM (including supernova remnants, outflows, bubbles, HII regions, molecular and infrared dark clouds, and planetary nebulae) are still
@@ -163,30 +156,104 @@ One way to summarize the performance of a classifier is to plot the false positi
 \subsection{Building a Catalog}
 Using our automatic bubble classifier to conduct a full search for Bubbles in \textit{Spitzer} data is straightforward. The main task involves scanning the classifier over all images, at all scales. At each of these postage stamps, the classifier yields a score, representing its confidence that the given field contains a bubble. A simple threshold on this score identifies regions likely to contain a bubble -- from the discussion of Figure \ref{fig:roc} above, adjusting this threshold sets the tradeoff between completeness and reliability. 
 
-In practice, the classifier is insensitive to small adjustments to the size or location of the field. As a result, bubbles are usually associated with a cluster of postage stamps that rise above the detection threshold (Figure \ref{fig:cluster}a). We follow a simple, greedy procedure to merge these individual detections. Given a collection of postage stamp descriptions (location and scale), this procedure identifies the two nearest locations at similar scales, and discards the location assigned a lower score by the classifier This process repeats until no two fields are close enough to discard. Two fields are close enough to merge if they are separated by less than the radius of either field, and have sizes that differ by less than 50\%. Figure \ref{fig:cluster}b) shows the result of clustering.
+In practice, the classifier is insensitive to small adjustments to the size or location of the field. As a result, bubbles are usually associated with a cluster of postage stamps that rise above the detection threshold (the grey boxes in Figure \ref{fig:cluster}). We follow a simple, greedy procedure to merge these individual detections. Given a collection of postage stamp descriptions (location and scale), this procedure identifies the two nearest locations at similar scales, and discards the location assigned a lower score by the classifier This process repeats until no two fields are close enough to discard. Two fields are close enough to merge if they are separated by less than the radius of either field, and have sizes that differ by less than 50\%. The purple box in Figure \ref{fig:cluster}) shows the result of clustering.
 
+\begin{figure}
+\includegraphics{cluster}
+\caption{An illustration of how Brut merges multiple bubble detections.}
+\label{fig:cluster}
+\end{figure}
+ 
+
+
+ 
 This practice works well for isolated bubbles, but occasionally fails for bubble complexes with multiple, overlapping bubbles. A more sophisticated clustering analysis may well perform better in this situation.
 
 \subsection{Classifying the l=35 field}
 \label{sec:case_study}
 To better understand the successes and failures of our classifier, we have analyzed the longitude range $34.5^\circ < \ell < 35.5^\circ$ in detail. In our first analysis, we scanned for all bubbles above a minimum size $r _{\rm min} = 80''$ \todo{Is this r or d?}, with scores above $s_{\rm min} = 0.55$. This search yielded 25 bubbles after merging. 
 
-Among the 25 automatic detections, 13 are unambiguous bubbles with clear counterparts in the MWP catalog. A further four objects appear to be bubbles as judged by the authors, but are part of bubble complexes. While the complexes are identified at least once in both catalogs, each catalog decomposes the complex slightly differently. Thus, these 4 objects don't have an obvious one-to-one relationship with an object in the MWP catalog. The automated classifier discovers two new candidate bubbles with no counterpart in the MWP catalog. \todo{Lookup what the MWP images for these regions look like. Why weren't they detected? My guess is contrast}. The remaining 6 objects in the automated catalog are false positives -- three are regions containing a bright and/or extended 24\um\, point source confused for a bubble interior, and three are regions with 8 \um\, nebulosity that don't appear shell-like.
+Among the 25 automatic detections, 13 are unambiguous bubbles with clear counterparts in the MWP catalog. A further four objects appear to be bubbles as judged by the authors, but are part of bubble complexes. While the complexes are identified at least once in both catalogs, each catalog decomposes the complex slightly differently. Thus, these 4 objects don't have an obvious one-to-one relationship with an object in the MWP catalog. Figure \ref{fig:cluster_confusion} shows an example of one region of confusion. The automated classifier discovers two new candidate bubbles with no counterpart in the MWP catalog. \todo{Lookup what the MWP images for these regions look like. Why weren't they detected? My guess is contrast}. The remaining 6 objects in the automated catalog are false positives -- three are regions containing a bright and/or extended 24\um\, point source confused for a bubble interior, and three are regions with 8 \um\, nebulosity that don't appear shell-like.
 
+\begin{figure}
+\includegraphics{cluster_confusion}
+\caption{An example cluster of bubbles. The Brut and MWP catalogs tend to decompose these complex regions differently.}
+\label{fig:cluster_confusion}
+\end{figure}
+ 
 In this same region, there are 32 objects in the MWP catalog, and 11 are unassociated with the automatic detections. Seven of these are judged by the authors to be false positives -- they are mostly regions of 8 \um\, nebulosity that don't appear to be shell-like or associated with young stars.  Five appear to be true bubbles, wrongly rejected by the automated classifier. The remaining six bubbles were not considered by the classifier -- three were too close to the image edge to be analyzed, and three were smaller than the minimum search scale (we return to these objects in the next subsection). 
 
 These numbers allow us to estimate the reliability and completeness of both catalogs. Assuming that there are no other bubbles in this region with $r > s_{\rm min}$ missed by both classifiers (but still detectable from the image data), there are roughly 24 detectable bubbles in this region -- 13 bubbles present in both catalogs, 5 objects only in the MWP catalog, 2 objects only in the automated catalog, and $\sim$ 4 bubbles in bubble complexes. The automated catalog recovers 80\% (19/24) of the bubbles, and mis-classifies 24\% (6/25) of detections. The Milky Way Project performs similarly: it recovers 92\% of bubbles (22/24), and mis-classifies 23\% of its detections (7/31).
 
 \subsubsection{Searching for small bubbles}
-In the previous analysis, three bubbles in the MWP catalog were not included in the automated catalog because they were smaller than the smallest scales scanned over.  These objects would otherwise have been included -- that is, the classifier assigns each bubble a high score. We thus repeated the above analysis, with a lower value of $s_{\rm min}$. This smaller-scale scan recovers the three small bubbles missed by the first scan. In addition, it discovers 4 additional small bubbles not in the MWP catalog. \todo{Are these in the small object catalog?}. However, false positive rate is also higher -- at very small scales, the classifier more easily confuses bright 24 \um\, sources as bubble interiors, and find's more coincidental 8\um\, nebulosity that is vaguely ring-like. Overall, the false positive rate is 42\% when including a search for bubbles, and detections not in the MWP catalog are 4 times more likely to be false positives than legitimate bubbles. From this, we conclude that our classifier is not currently suitable for searching for small bubbles.
+In the previous analysis, three bubbles in the MWP catalog were not included in the automated catalog because they were smaller than the smallest scales scanned over.  These objects would otherwise have been included -- that is, the classifier assigns each bubble a high score. We thus repeated the above analysis, with a lower value of $s_{\rm min}$. This smaller-scale scan recovers the three small bubbles missed by the first scan. In addition, it discovers 4 additional small bubbles not in the MWP catalog. \todo{Are these in the small object catalog?}. However, false positive rate is also higher -- at very small scales, the classifier more easily confuses bright 24 \um\, sources as bubble interiors, and find's more coincidental 8\um\, nebulosity that is vaguely ring-like. Overall, the false positive rate is 42\% when including a search for small bubbles, and detections not in the MWP catalog are 4 times more likely to be false positives than legitimate bubbles. From this, we conclude that our classifier is not currently suitable for searching for small bubbles.
+
 
 \subsection{Expert Validation}
 
-To some extent, identifying bubbles in \textit{Spitzer} images is a subjective task. While the objects in Figure \ref{fig:gallery}a are unambiguously associated with star formation, other sources are not. In some cases -- particularly irregular bubbles, or those with faint or no 24\um\, emission -- it is unclear whether cavities seen in 8 \um\, data are actively sculpted by young stars, or merely the underlying structure of the undisturbed ISM. 
+At some level, identifying bubbles in \textit{Spitzer} images is a subjective task. While the objects in Figure \ref{fig:gallery}a are unambiguously associated with star formation, other sources are not. In some cases -- particularly irregular bubbles, or those with faint or no 24\um\, emission -- it is unclear whether cavities seen in 8 \um\, data are actively sculpted by young stars, or merely the underlying structure of the undisturbed ISM. A proper analysis of a bubble detection strategy should account for this.
 
-The automatic classification is potentially well-suited to quantify this degree of ambiguity, since the classifier assigns each region a 0-1 score based on how representative it is of the training data. It's reasonable to assume that this number correlates with the intrinsic ambiguity of a particular classification, and we can test this.
+The subjectivity of bubble identification has received only limited attention. The MWP catalog includes a ``hit rate'' measurement that lists the fraction of citizen scientists who identify a specific bubble, relative to the total number of users who viewed an image containing that bubble. However, as discussed above, the Milky Way Project catalog contains many objects besides bubbles. Thus, while the hit rate communicates how visually salient a particular ISM feature appears to MWP users, it does not directly convey how much consensus astronomers have about the astrophysical nature of that feature.
 
-The MWP catalog is not an ideal dataset for assessing intrinsic classification ambiguity, since Citizen Scientists were not trained or instructed to discriminate between different astrophysical objects. Thus, while the MWP catalog does report the amount of consensus around each object, this consensus is more a measure of how shell-like an object appears, and not the consensus to which domain experts would concur a particular objects is a canonical bubble.
+To better measure the level of expert consensus in bubble identification, we conducted a small online survey. The astronomer participants of this survey were presented with a sequence of 92 Spitzer images at three zoom levels and two contrast settings. They were asked to assign each image to one of three categories: clear examples of bubbles or H$_{II}$ regions, ambiguous or irregular bubbles, or Non-bubbles. Appendix A discusses the survey setup in more detail.
+
+\subsubsection{Validation of the Milky Way Project Catalog}
+Of the 92 images in the expert survey, 45 are a random subset of objects in the MWP catalog. Figure \ref{fig:expert_mwp_votes} shows the voting breakdown for these objects. Each row corresponds to a single image, and the red, orange, and blue bars show the fraction of experts who classified the image in each category. The darkened color in each row indicates the most popular classification.  We call attention to several aspects of this distribution: 
+
+
+
+\begin{figure}
+\includegraphics{expert_mwp_votes}
+\caption{The distribution of expert classifications for 41 bubbles in the Milky Way Project catalog. Each row corresponds to an image, and the colored bars in that row indicate the fraction of experts who categorized the image as a Bubble (blue), Irregular or Ambiguous Bubble (orange), and Non-Bubble (red).}
+\label{fig:expert_mwp_votes}
+\end{figure}
+
+\begin{enumerate} 
+\item Only 15\% of these objects were unanimously classified as clear bubbles -- this number increases to about 50\% if all irregular and ambiguous objects are optimistically treated as bubbles. 
+\item Depending on how many irregular/ambiguous objects are legitimate bubbles, between 10 and 30\% of objects in the MWP catalog are judged by experts to be interlopers -- that is, objects which are unlikely to be the result of a young star sculpting the surrounding ISM.
+\item The most popular category for each object is chosen by 70\% of experts on average. In other words, when using Spitzer images, determining the ``true'' nature of an object in the MWP catalog is subjective at the 30\% level on average.
+\end{enumerate}
+
+
+Is it possible to determine which of the remaining objects in the MWP catalog would likely be rejected as interlopers by experts? The hit rate of each object in the catalog might correlate with expert opinion, and be a useful filter. Likewise, the confidence score computed by Brut might identify interlopers. Figure \ref{fig:expert_mwp_score} plots these these two quantities compared to the expert category. The Y axis of each point denotes the level of consensus for each object -- the percentage of experts who chose the plurality category. Both metrics partially separate Bubbles from the other categories. The Hit Rate is more effective at penalizing orange and red objects, which are confined to Hit Rate $<0.2$. The Brut score, on the other hand, is more effective at identifying high-consensus bubbles, which have high scores. We also plot in Figure \ref{fig:expert_mwp_score} a joint score -- the sum of the normalized and mean-subtracted Brut score and hit rate.  This combines the complementary strengths of the individual metrics, and achieves the best separation.
+
+\begin{figure}
+\includegraphics{expert_mwp_score}
+\caption{The ability for the MWP hit rate and Brut score to predict expert expert classifications for objects in the MWP catalog. Each circle represents an object in the MWP catalog. Circle color depicts the most popular classification, and the y-position indicates the fraction of experts who chose this category. The
+black lines show the probability that an object with a given score on the x axis would be classified as a bubble -- this line is obtained via  logistic fit to the data. The Joint metric, which combines the Hit Rate and Brut score, is best able to predict expert classifications.}
+\label{fig:expert_mwp_score}
+\end{figure}
+
+The expert reclassifications of this sample of Milky Way Project objects can be used to convert an uncalibrated score like the joint score to a calibrated probability that an object is a Bubble, given a score. The black curves in Figure \ref{fig:expert_mwp_score} show a logistic fit to the classifications, showing the probability that an object is a Bubble as a function of the score on the x axis. Because logistic fits deal with binary classification, the fits in Figure \ref{fig:expert_mwp_score} assigned the Ambiguous/Irregular category to the Non-Bubble category. In the online version of this paper, we provide an enhanced version of the Milky Way Project DR1 catalog, that includes the Brut score, joint score, and bubble probability computed from the logistic fit to the joint score. Researchers can incorporate these data into probabilistic analyses of bubbles.
+
+Finally, in Figure \ref{fig:expert_roc} we present the ROC curve of each of the three scores, demonstrating the tradeoff of between false and true positive rate.
+
+\begin{figure}
+\includegraphics{expert_roc}
+\caption{The receiver operating characteristic curve for the MWP objects reclassified by experts. Each line shows the false positive rate and true positive rate obtained by thresholding the MWP catalog according to the hit rate, Brut score, or joint score. }
+\label{fig:expert_roc}
+\end{figure}
+
+
+\subsubsection{Uniform Classification}
+The remaining 47 regions in the expert classification were drawn randomly from the full set of fields analyzed during Brut's full-scan of the Spitzer images. A fully random sample from this collection is uninteresting, since the majority of fields are blank areas of the sky. Instead, these 47 images are approximately uniformly distributed in the Brut confidence score. We refer to these images as the ``uniform'' sample. 
+
+The expert vote distribution for these images is shown in Figure \ref{fig:expert_uniform_votes}. There are more non-bubble fields in this sample, but the overall properties are otherwise similar. The average field is classified with a 72\% consensus.
+
+Figure \ref{fig:expert_uniform_score} shows the Brut score for each field in the uniform sample, compared to the plurality category (color) and level of consensus (Y axis). The Brut score does a good job of separating the high consensus objects. Overall, however, the classes overlap more for the uniform sample than for the MWP sample. This is also expected, since all objects in the MWP sample have been previously identified by citizen scientists as potential bubble sites. The uniform sample does not benefit from this information, and is representative of the harder, ``blind'' classification task. As before, a logistic fit can be used to estimate, for objects identified in a blind search, the probability of being a bubble given the Brut score.
+
+\begin{figure}
+\includegraphics{expert_uniform_votes}
+\caption{The same as Figure \ref{fig:expert_mwp_votes}, for the Uniform sample.}
+\label{fig:expert_uniform_votes}
+\end{figure}
+
+\begin{figure}
+\includegraphics{expert_uniform_score}
+\caption{The same as Figure \ref{fig:expert_uniform_score}, for the Uniform sample.}
+\label{fig:expert_uniform_score}
+\end{figure}
+
 
 
 \subsection{Comparison to Other Catalogs}
