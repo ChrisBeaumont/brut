@@ -100,6 +100,12 @@ def xmatch(a, b):
 
     These stamp params are returned by, e.g., Field.all_stamps
     or bubbly.dr1.bubble_params()
+
+    Returns
+    -------
+    match : array of ints
+        Each element lists which item in b matches to each item in a,
+        or -1 if no match is found
     """
 
     a = np.asarray(a)
