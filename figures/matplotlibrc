@@ -383,13 +383,12 @@ image.origin : lower             # lower | upper
 #examples.directory : ''   # directory to look in if download is false
 
 
-axes.facecolor : e5e5e5
-axes.grid : True
+#axes.facecolor : e5e5e5
 font.family : StixGeneral
 
 axes.color_cycle: 1b9e77,d95f02,7570b3, e7298a, 66a61e,e6ab02,a6761d
 grid.linestyle   :   -
-grid.color : white
+grid.color : k
 grid.linewidth : 2
 axes.axisbelow : true
 lines.linewidth : 2

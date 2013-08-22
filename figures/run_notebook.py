@@ -10,6 +10,6 @@ def run(fname):
 
     for cell in nb.worksheets[0].cells:
         if cell.cell_type == 'code' and cell.language == 'python':
-            exec cell.input in result
+            exec cell.input.replace('%matplotlib', '#%matplotlib') in result
 
     return result
