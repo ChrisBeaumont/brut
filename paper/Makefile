@@ -8,5 +8,8 @@ figures:
 	cp ../figures/cluster.eps .
 	cp ../figures/cluster_confusion.eps .
 	cp ../figures/expert_*eps .
+	cp ../figures/dist_*eps .
+	cp ../figures/mwp.eps .
+	cp ../figures/l???.eps .
 
 	./topdf
