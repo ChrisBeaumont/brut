@@ -60,8 +60,6 @@ def main():
     w = im.shape[1]
     plt.axvline(3 * w / 7, color='#eeeeee', lw=3)
     plt.axvline(5 * w / 7, color='#eeeeee', lw=3)
-    plt.axvline(6 * w / 7, color='#eeeeee', lw=3)
-
 
     labels = [bubbles[0], bubbles[1], bubbles[2],
               snr[0], pne[0], globule[0], other[0],
@@ -76,7 +74,6 @@ def main():
     plt.annotate("a", xy=(20, h - 60), **kwargs)
     plt.annotate("b", xy=(20 + 3 * w / 7, h - 60), **kwargs)
     plt.annotate("c", xy=(20 + 5 * w / 7, h - 60), **kwargs)
-    plt.annotate("d", xy=(20 + 6 * w / 7, h - 60), **kwargs)
 
     hide_axes()
     plt.savefig('gallery.eps')

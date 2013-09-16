@@ -25,8 +25,17 @@ def main():
     plt.xlim(0, .002)
     plt.xlabel("False Positive Rate")
     plt.ylabel("True Positive Rate")
-    plt.legend(loc='lower right')
+    plt.legend(loc='lower right', frameon=False)
     plt.gcf().set_tight_layout(True)
+
+    ax = plt.gca()
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.xaxis.set_ticks_position('none')
+    ax.yaxis.set_ticks_position('none')
+    ax.xaxis.tick_bottom()
+    ax.yaxis.tick_left()
+
     plt.savefig('roc.eps')
 
 if __name__ == "__main__":

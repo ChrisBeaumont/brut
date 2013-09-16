@@ -302,7 +302,8 @@ def chunk(x, n):
     return [x[i: i + chunksz] for i in range(0, nx, chunksz)]
 
 
-def cloud_map(func, args, jobs):
+def cloud_map(func, args, jobs=None, return_jobs=False,
+              **cloud_opts):
     """
     Call cloud.map, with some standard logging info
 
@@ -312,22 +313,33 @@ def cloud_map(func, args, jobs):
     args : list of mapping arguments
     jobs : list of pre-existing job ids, or None
         If present, will fetch the results from these jobs
+    return_jobs : boolean (optional, default false)
+        If True, return the job IDs instead of
+        the job results
+    cloud_opts : dict (optional)
+        Extra keyword arguments to pass to cloud.map
 
     Returns
     -------
-    Result of cloud.map
+    Result of cloud.map if return_jobs=False, else the job ids
     """
     import cloud
+
+    cloud_opts.setdefault('_env', 'mwp')
+    cloud_opts.setdefault('_type', 'c2')
+    cloud_opts.setdefault('_label', func.__name__)
 
     if jobs is None:
         log = logging.getLogger(func.__module__)
 
         log.debug(
             "Starting %i jobs on PiCloud for %s" % (len(args), func.__name__))
-        jobs = cloud.map(func, args, _env='mwp', _type='c2',
-                         _label=func.__name__)
+        jobs = cloud.map(func, args, **cloud_opts)
         log.debug("To re-fetch results, use \n"
                   "%s(jobs=range(%i, %i))" %
                   (func.__name__, min(jobs), max(jobs) + 1))
+
+    if return_jobs:
+        return jobs
 
     return cloud.result(jobs)

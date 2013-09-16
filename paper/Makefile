@@ -1,4 +1,7 @@
 figures:
+	rm -f *.eps
+	rm -f trigger.pdf
+
 	cd ../figures && make
 
 	cp ../figures/roc.eps .
@@ -10,6 +13,12 @@ figures:
 	cp ../figures/expert_*eps .
 	cp ../figures/dist_*eps .
 	cp ../figures/mwp.eps .
+	cp ../figures/new_gallery.eps .
+	cp ../figures/new_score.eps .
 	cp ../figures/l???.eps .
 
 	./topdf
+	cp ../figures/trigger.pdf .
+	pdf2ps trigger.pdf
+	ps2eps trigger.ps
+	cp ../figures/schematic* .

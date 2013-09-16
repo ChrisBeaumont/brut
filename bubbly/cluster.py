@@ -43,6 +43,7 @@ def merge(stamps, scores):
     a row subset of the original arrays
     """
     stamps = np.atleast_2d(stamps)
+    scores = np.asarray(scores)
 
     d = bubble_distance_matrix(stamps, stamps)
 

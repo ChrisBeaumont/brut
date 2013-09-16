@@ -144,7 +144,7 @@ class Field(object):
             return
 
         sz = 2 * dx
-        stride = max(int(sz / 80), 1)
+        stride = max(int(sz / (shp[0] * 2)), 1)
 
         i4 = self.i4[bt:tp:stride, lt:rt:stride]
         mips = self.mips[bt:tp:stride, lt:rt:stride]
