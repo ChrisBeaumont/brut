@@ -1,4 +1,4 @@
-all : roc.eps gallery.eps fp.eps bootstrap_neg.eps roc_all.eps cluster.eps cluster_confusion.eps expert_mwp_score.eps expert_mwp_votes.eps expert_roc.eps expert_uniform_score.eps expert_uniform_votes.eps mwp.eps dist_lon.eps dist_lat.eps dist_hii_score.eps l317.eps l305.eps l299.eps new_gallery.eps new_score.eps trigger.eps
+all : roc.eps gallery.eps fp.eps bootstrap_neg.eps cluster.eps expert_mwp_score.eps expert_mwp_votes.eps expert_roc.eps expert_uniform_score.eps expert_uniform_votes.eps mwp.eps dist_lon.eps dist_lat.eps dist_hii_score.eps dist_map.eps l317.eps l305.eps l299.eps new_gallery.eps new_score.eps trigger.pdf zones.eps
 
 dist_%.eps: distributions.py ../notebooks/distributions.ipynb
 	python distributions.py
@@ -18,5 +18,5 @@ roc.eps : roc_plot.py
 new_%.eps: new_gallery.py ../notebooks/full_search_distributions.ipynb
 	python new_gallery.py
 
-trigger.eps: trigger.py ../notebooks/trigger.ipynb
+trigger.pdf: trigger.py ../notebooks/trigger.ipynb
 	python trigger.py

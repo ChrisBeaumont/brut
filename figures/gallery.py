@@ -55,11 +55,12 @@ def main():
 
 
     plt.figure(figsize=(8, 4), dpi=200)
+    plt.gca().axis('off')
     plt.imshow(im)
 
     w = im.shape[1]
-    plt.axvline(3 * w / 7, color='#eeeeee', lw=3)
-    plt.axvline(5 * w / 7, color='#eeeeee', lw=3)
+    plt.axvline(3 * w / 7, color='#eeeeee', lw=2)
+    plt.axvline(5 * w / 7, color='#eeeeee', lw=2)
 
     labels = [bubbles[0], bubbles[1], bubbles[2],
               snr[0], pne[0], globule[0], other[0],
@@ -70,7 +71,7 @@ def main():
 
     #label(labels, im.shape[1], im.shape[0], 7, 3)
     h, w = im.shape[0:2]
-    kwargs = dict(color='white', fontsize=18, backgroundcolor='k')
+    kwargs = dict(color='#222222', fontsize=20)
     plt.annotate("a", xy=(20, h - 60), **kwargs)
     plt.annotate("b", xy=(20 + 3 * w / 7, h - 60), **kwargs)
     plt.annotate("c", xy=(20 + 5 * w / 7, h - 60), **kwargs)

@@ -117,7 +117,7 @@ backend.qt4        : PySide
 # small, medium, large, x-large, xx-large, larger, or smaller
 #font.size           : 12.0
 #font.serif          : Bitstream Vera Serif, New Century Schoolbook, Century Schoolbook L, Utopia, ITC Bookman, Bookman, Nimbus Roman No9 L, Times New Roman, Times, Palatino, Charter, serif
-#font.sans-serif     : Bitstream Vera Sans, Lucida Grande, Verdana, Geneva, Lucid, Arial, Helvetica, Avant Garde, sans-serif
+font.sans-serif     : Helvetica, Bitstream Vera Sans, Lucida Grande, Verdana, Geneva, Lucid, Arial, Avant Garde, sans-serif
 #font.cursive        : Apple Chancery, Textile, Zapf Chancery, Sand, cursive
 #font.fantasy        : Comic Sans MS, Chicago, Charcoal, Impact, Western, fantasy
 #font.monospace      : Bitstream Vera Sans Mono, Andale Mono, Nimbus Mono L, Courier New, Courier, Fixed, Terminal, monospace
@@ -384,7 +384,8 @@ image.origin : lower             # lower | upper
 
 
 #axes.facecolor : e5e5e5
-font.family : StixGeneral
+#font.family : StixGeneral
+font.family : Helvetica
 
 axes.color_cycle: 1b9e77,d95f02,7570b3, e7298a, 66a61e,e6ab02,a6761d
 grid.linestyle   :   -

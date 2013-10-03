@@ -85,6 +85,13 @@ def main():
     s, m, l = [bubbles[bubbles['reff'] > thresh]
                for thresh in np.percentile(bubbles['reff'], [50, 75, 90])]
 
+    #randomly reposition bubbles to overlap stars
+    ind = np.random.randint(0, len(ysos) - 1, len(bubbles))
+    sb = Table(bubbles)
+    sb['lon'] = ysos['lon'][ind]
+    sb['lat'] = ysos['lat'][ind]
+    run_correlation(sb, ysos, path.join(out_dir, 'cluster_ysopos.csv'))
+
     # baseline
     run_correlation(bubbles, ysos, path.join(out_dir, 'cluster_all.csv'))
     run_correlation(b1, ysos, path.join(out_dir, 'cluster_plow.csv'))
@@ -125,6 +132,9 @@ def main():
                     binStep=0.1)
     run_correlation(b3, ysos, path.join(out_dir, 'cluster_phi_bin.csv'),
                     binStep=0.1)
+
+
+
 
 if __name__ == '__main__':
     main()

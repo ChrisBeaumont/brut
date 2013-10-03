@@ -1,5 +1,5 @@
 
-TARGETS := ../models/full_classifier.dat ../models/benchmark_scores.json ../models/l035_scores.json ../models/bubble_scores.json ../models/l035_small_scores.json ../models/random_scores.json ../models/l305_scores.json ../data/cluster_plow.csv ../data/cluster_pmid.csv ../data/cluster_phi.csv
+TARGETS := ../models/full_classifier.dat ../models/benchmark_scores.json ../models/l035_scores.json ../models/bubble_scores.json ../models/l035_small_scores.json ../models/random_scores.json ../models/l305_scores.json ../data/cluster_plow.csv ../data/cluster_pmid.csv ../data/cluster_phi.csv ../data/cluster_ysopos.csv prob_table.tex
 
 MODEL := ../models/full_classifier.dat
 
@@ -46,3 +46,6 @@ submit_%:
 
 ../data/full_search.csv: merge_full_search.py
 	python merge_full_search.py
+
+prob_table.tex: prob_table.py
+	python prob_table.py

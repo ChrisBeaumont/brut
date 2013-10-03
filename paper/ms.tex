@@ -24,7 +24,8 @@
 \begin{document}
 
 
-\title{Automated Detection of Interstellar Bubbles}
+\title{The Milky Way Project: Leveraging Citizen Science and Machine Learning to Detect Interstellar Bubbles}
+
 \shortauthors{Beaumont et al}
 \author{Christopher N. Beaumont$^{1,2}$, Alyssa A. Goodman$^2$, Sarah Kendrew$^3$, Jonathan P. Williams$^1$, Robert Simpson$^3$}
 \affil{$^1$Institute for Astronomy, University of Hawai'i, 2680 Woodlawn Drive, Honolulu HI 96822;  beaumont@ifa.hawaii.edu}
@@ -32,35 +33,35 @@
 \affil{$^3$Department of Astrophysics, University of Oxford, Denys Wilkinson Building, Keble Road, Oxford OX1 3RH, UK}
 
 \begin{abstract}
-We present Brut, an algorithm to identify bubbles in infrared images of the Galactic midplane. Brut is based on the Random Forest algorithm, and uses bubbles identified by citizen scientists from the Milky Way Project to discover the identifying characteristics of bubbles in images from the \textit{Spitzer} Space Telescope. We demonstrate that Brut's ability to identify bubbles is comparable to expert astronomers. We use Brut to re-assess the bubbles in the Milky Way Project catalog, and find that $10-30\%$ of the objects in the Milky Way Project catalog are non-bubble interlopers. Relative to these interlopers, high-reliability bubbles are more confined to the mid plane, and display a stronger excess of Young Stellar Objects near bubble rims. Furthermore, Brut is able to discover bubbles missed by previous searches -- particularly bubbles near bright sources which have low contrast relative to their surroundings. Brut demonstrates the synergies that exist between citizen scientists, professional scientists, and machine learning techniques.
+We present Brut, an algorithm to identify bubbles in infrared images of the Galactic midplane. Brut is based on the Random Forest algorithm, and uses bubbles identified by $>35,000$ citizen scientists from the Milky Way Project to discover the identifying characteristics of bubbles in images from the \textit{Spitzer Space Telescope}. We demonstrate that Brut's ability to identify bubbles is comparable to expert astronomers. We use Brut to re-assess the bubbles in the Milky Way Project catalog, and find that $10-30\%$ of the objects in this catalog are non-bubble interlopers. Relative to these interlopers, high-reliability bubbles are more confined to the mid plane, and display a stronger excess of Young Stellar Objects along and within bubble rims. Furthermore, Brut is able to discover bubbles missed by previous searches -- particularly bubbles near bright sources which have low contrast relative to their surroundings. Brut demonstrates the synergies that exist between citizen scientists, professional scientists, and machine learning techniques. In cases where ``untrained'' citizens can identify patterns that machines cannot detect without training, machine learning algorithms like Brut can use the \emph{output} of citizen science projects as \emph{input} training sets, offering tremendous opportunities to speed the pace of scientific discovery.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
-Stellar feedback has an important influence on the dynamics and energy balance of the Interstellar Medium (ISM) \citep{Zinnecker07}. Winds and radiation fields from massive young stars can reshape nearby molecular clouds. This interaction can replenish energy dissipated by turbulence, trigger star formation by compressing and collecting gas, and even chemically dissociate or physically disperse molecular clouds.
+Stellar feedback has an important influence on the dynamics and energy balance of the Interstellar Medium (ISM) \citep{Zinnecker07}. Winds and radiation fields from massive young stars can reshape nearby molecular clouds. This interaction can replenish energy dissipated by turbulence, trigger star formation by compressing and collecting gas, and even chemically dissociate or physically disperse molecular clouds \citep{Matzner02}.
 
-Interstellar ``bubbles'' are a primary mode of stellar feedback. Young OB stars have sufficient stellar winds and ionizing photon luminosity to sculpt spherical or ring-like cavities in their surrounding molecular clouds. Bubbles in particular are relevant because, compared to collimated outflows, they affect a larger volume of ambient molecular clouds and, compared to supernovae, occur around a larger proportion of stars.
+Interstellar ``bubbles'' are a primary manifestation of stellar feedback. Young OB stars have sufficient stellar winds and ionizing photon luminosity to sculpt spherical or ring-like cavities in their surrounding molecular clouds. Bubbles in particular are relevant because, compared to collimated outflows, they affect a larger volume of ambient molecular clouds and, compared to supernovae, occur around a larger proportion of stars and persist for a longer period of time \citep{Matzner02, Arce11}.
 
-Unfortunately, due to their complex morphologies, bubbles -- like many features of the interstellar medium -- are difficult to identify and analyze. Existing catalogs of spatially extended bubbles have typically been identified manually \citep{Churchwell06, Churchwell07, Simpson12, Helfand06}. This has two main disadvantages. First, it is cumbersome and increasingly infeasible as datasets grow ever larger. Second, manual classification is inherently subjective and non-repeatable; humans are susceptible to fatigue, boredom, and subtle selection biases whose impact on the resulting catalog is difficult to calibrate. The problems associated manual bubble detection are germane to many analyses with a subjective component. 
+Unfortunately, due to their complex morphologies, bubbles -- like many features of the interstellar medium -- are difficult to identify and analyze. Existing catalogs of spatially extended bubbles have typically been identified visually \citep{Churchwell06, Churchwell07, Simpson12, Helfand06}. This has two main disadvantages. First, it is cumbersome and increasingly infeasible as datasets grow ever larger. Second, manual classification is inherently subjective and non-repeatable; humans are susceptible to fatigue, boredom, and subtle selection biases whose impact on the resulting catalog is difficult to calibrate. The problems associated manual bubble detection are germane to many analyses with a subjective component. 
 
 Machine learning techniques represent a promising solution to these problems. These techniques aim to construct computational models that can distinguish between different classes of objects, without domain-specific knowledge of what such objects represent -- in other words, they identify purely statistical differences between different populations of data. While such models are not typically useful as \textit{scientific} models, they can be very effective as \textit{computational} models to perform tasks like classification. 
 
-Our goal in this work is to apply machine learning techniques to the task of bubble detection, to evaluate the potential of this approach. Using a catalog of known bubbles identified by the citizen scientists of the Milky Way Project \citep{Simpson12}, we ``teach'' an algorithm to identify bubbles in image data from the \textit{Spitzer} space telescope. We describe the design of this algorithm, which we call Brut, in Section \ref{sec:method}. In Section \ref{sec:expert}, we use a set of expert classifications to measure Brut's performance at bubble detection. In Section \ref{sec:prob}, we demonstrate that this detector produces useful probabilistic estimates for whether any particular image contains a bubble -- these probabilities correlate well with how astronomers classify similar regions. We use this detector to look for biases and incompleteness in existing bubble catalogs. This analysis yields a new catalog of high-probablity bubbles, and we explore how the ensemble properties of this catalog differ from old catalog. In In Section \ref{sec:blind}, we apply Brut to the task of discovering bubbles missing from current catalogs. Section \ref{sec:next_steps}, we consider how this approach applies more generally to future data analysis problems in astronomy.
+Our goal in this work is to apply machine learning techniques to the task of bubble detection, and to evaluate the potential of this approach. Using a catalog of known bubbles identified by the citizen scientists of the Milky Way Project \citep{Simpson12}, we ``teach'' an algorithm to identify bubbles in image data from the \textit{Spitzer} space telescope. We describe the design of this algorithm, which we call Brut, in Section \ref{sec:method}. In Section \ref{sec:expert}, we use a set of expert classifications to measure Brut's performance at bubble detection. In Section \ref{sec:prob}, we demonstrate that this detector produces useful probabilistic estimates for whether any particular image contains a bubble -- these probabilities correlate well with how astronomers classify similar regions. We use this detector to look for biases and incompleteness in existing bubble catalogs. This analysis yields a new catalog of high-probability bubbles, and we explore how the ensemble properties of this catalog differ from the old catalog. In Section \ref{sec:blind}, we apply Brut to the task of discovering bubbles missing from current catalogs. In Section \ref{sec:next_steps}, we consider how this approach applies more generally to future data analysis problems in astronomy.
 
 \subsection{Previous Work}
 \label{sec:previous}
 
-Generally speaking, a ``bubble'' is a shell-like, 1-30 parsec-scale cavity in the ISM, cleared by a combination of thermal overpressure, radiation pressure, and stellar winds. The basic structure of a bubble is shown in Figure \ref{fig:schematic}. \cite{Stromgren39} first worked out the ionization structure of OBA stars in the ISM. The act of ionizing hydrogen heats gas from 100 to 10$^4$K, creating a strong overpressure that drives expansion into the surrounding medium. This expansion creates an overdense shell of gas along the expansion front. \cite{Castor75} and \cite{Weaver77} extended this analysis to include the effects of strong stellar winds from O and early B stars. The main effect of a stellar wind is to create a shocked, high-temperature (10$^6$K) region within the 10$^4$K ionization region. This shock sweeps up additional material within the ionization region, potentially creating a second shell. Though the term ``bubble'' originally referred to cavities cleared by stellar winds, modern observational studies of ``bubbles'' tend to include both these objects and classical \hii\, regions. Throughout this paper, we use the term ``bubble'' more widely to refer to any shell-like cavity cleared by a young star.
+Generally speaking, a bubble is a shell-like, 1-30 parsec-scale cavity in the ISM, cleared by a combination of thermal overpressure, radiation pressure, and stellar winds. The basic structure of a bubble is shown in Figure \ref{fig:schematic}. \cite{Stromgren39} first derived the ionization structure around OBA stars in the ISM. The act of ionizing hydrogen heats gas from 100 to 10$^4$K, creating a strong overpressure that drives expansion into the surrounding medium. This expansion creates an overdense shell of gas along the expansion front. \cite{Castor75} and \cite{Weaver77} extended this analysis to include the effects of strong stellar winds from O and early B stars. The main effect of a stellar wind is to create a shocked, high-temperature (10$^6$K) region within the 10$^4$K ionization region. This shock sweeps up additional material within the ionization region, potentially creating a second shell. Though the term ``bubble'' originally referred to cavities cleared by stellar winds, modern observational studies of ``bubbles'' tend to include both these objects and classical \hii\, regions. Furthermore, \cite{Beaumont10} demonstrated that many bubbles are embedded in relatively thin clouds, and more closely resemble rings than spheres. Throughout this paper, we use the term ``bubble'' broadly to refer to any ring- or shell-like cavity cleared by a young or main sequence star.
 
-The Spitzer Space Telescope and its surveys of the Galactic midplane -- {\sc glimpse} \citep{Benjamin03} and {\sc mipsgal} \citep{Carey09} -- enabled comprehensive, statistical studies of bubbles in the Galaxy. Mid-infrared wavelengths are well-suited for bubble observations, as they penetrate deeper into the Galactic disk and match bubble emission features. Figure \ref{fig:schematic} schematically depicts the observational signature of a bubble in Spitzer data. The interface between bubble shells and the ambient ISM excites polycyclic aromatic hydrocarbon (PAH) emission features, several of which overlap the 8\um\, bandpass. Bubble interiors often emit at 24\um, due to emission from hot dust grains \citep{Everett10}. 
+The \emph{Spitzer Space Telescope} and its surveys of the Galactic midplane -- {\sc glimpse} \citep{Benjamin03} and {\sc mipsgal} \citep{Carey09} -- enabled comprehensive, statistical studies of bubbles in the Galaxy. Mid-infrared wavelengths are well-suited for bubble observations, as they penetrate deeper into the Galactic disk and match bubble emission features. Figure \ref{fig:schematic} schematically depicts the observational signature of a bubble in \emph{Spitzer} data. The interface between bubble shells and the ambient ISM excites polycyclic aromatic hydrocarbon (PAH) emission features, several of which fall within \emph{Spitzer}'s 8\um\, bandpass. Bubble interiors often emit at 24\um, due to emission from hot dust grains \citep{Everett10}. 
 
-\cite{Churchwell06} and \cite{Churchwell07} carried out the first search for Bubbles in Spitzer images of the Galactic plane, yielding  a catalog of some 600 bubbles located at $|\ell| < 65^\circ$, $|b| < 1^\circ$. These objects were identified by four astronomers manually searching through 3.5-8.0 \um\, images (they did not have access to 24 \um\, images). They noted that each astronomer possessed different selection biases, and cautioned that this catalog was likely incomplete.
+\cite{Churchwell06} and \cite{Churchwell07} carried out the first search for Bubbles in \emph{Spitzer} images of the Galactic plane, yielding  a catalog of some 600 bubbles located at $|\ell| < 65^\circ$, $|b| < 1^\circ$. These objects were identified by four astronomers manually searching through 3.5-8.0 \um\, images (they did not have access to 24 \um\, images). \cite{Churchwell06} noted that each astronomer possessed different selection biases, and cautioned that their catalog was likely incomplete.
 
-In an attempt to overcome the inherent bias in manual classification, the web-based Milky Way Project \citep{Simpson12} enlisted over 35,000 citizen scientists to search for bubbles in Spitzer data. The Milky Way Project (hereafter MWP) presented pre-scaled Spitzer images at 4.5\um,  8\um, and 24\um, and asked citizen scientists to draw ellipses around potential bubbles. Figure \ref{fig:mwp} shows two typical images presented to the public. This led to a dramatically larger catalog of $\sim 5000$ objects. The organizers of the MWP attribute this large increase to the 1000-fold increase in human classifiers and the use of 24\um\, data to further emphasize bubble interiors. They estimate the MWP catalog to be 95\% complete, based on the falloff rate at which new objects were discovered. Still, they cautioned that this catalog is heterogenous, and probably affected by hard-to-measure selection biases. 
+In an attempt to overcome the inherent bias in manual classification, the web-based Milky Way Project \cite{Simpson12} enlisted over 35,000 citizen scientists to search for bubbles in \emph{Spitzer} data. The Milky Way Project (hereafter MWP) presented color-composite \emph{Spitzer} images at 4.5\um,  8\um, and 24\um, and asked citizen scientists to draw ellipses around potential bubbles. Figure \ref{fig:mwp} shows two typical images presented to the public. Each image in the Milky Way Project was 800x400 pixels, with a pixel scale ranging between 1.35$''$ and 6.75$''$ per pixel. The citizen science effort produced a dramatically larger catalog of $\sim 5000$ objects, nearly 10 times the number in the catalog of $\sim 600$ shells cataloged by the four astronomers of the \cite{Churchwell06, Churchwell07} surveys. The organizers of the MWP attribute this large increase to the 10,000-fold increase in human classifiers and the use of 24\um\, data to further emphasize bubble interiors. They estimate the MWP catalog to be 95\% complete, based on the falloff rate at which new objects were discovered. Still, they cautioned that this catalog is heterogenous, and probably affected by hard-to-measure selection biases. 
 
 \begin{figure}[h!]
 \includegraphics[width=3in]{schematic}
-\caption{Schematic structure of a bubble, adapted from \citep{Freyer03}. The red and green colors encode the typical morphology seen in Spitzer images, where green is assigned to 8 \um\, emission -- dominated by PAH fluorescence -- and red is assigned to 24 \um emission -- dominated by hot dust.}
+\caption{Schematic structure of a bubble, adapted from \citep{Freyer03}. The red and green colors encode the typical morphology seen in \emph{Spitzer} images, where green is assigned to 8 \um\, emission -- dominated by PAH fluorescence -- and red is assigned to 24 \um\, emission -- dominated by hot dust.}
 \label{fig:schematic}
 \end{figure}
 
@@ -73,7 +74,7 @@ In an attempt to overcome the inherent bias in manual classification, the web-ba
 \begin{figure*}
 \includegraphics[trim= .7in 0 0 0, clip]{gallery}
 \caption{Different astrophysical objects in the MWP catalog. a) ``Canonical'' wind-blown bubbles and \hii\, regions. b) shells
-without 8 \um\, PAH emission (likely supernovae and planetary nebulae). c) generic ISM structures of unclear astrophysical origin.}
+without 8 \um\, PAH emission (likely supernovae or bubbles around evolved massive stars). c) generic ISM structures of unclear astrophysical origin.}
 \label{fig:gallery}
 \end{figure*}
 
@@ -82,13 +83,13 @@ without 8 \um\, PAH emission (likely supernovae and planetary nebulae). c) gener
 
 In terms of accuracy, humans still outperform computers in most image-based pattern recognition tasks (e.g., \citealt{Zhang10}). Because of this, morphologically complex structures in the ISM (including supernova remnants, outflows, bubbles, \hii\, regions, molecular and infrared dark clouds, and planetary nebulae) are still traditionally cataloged manually. Human classification has several disadvantages, however.
 
-First, human classification is time consuming, and people-hours are a limited resource. Even by enlisting large communities of citizen scientists, data from next generation surveys will be too large to search exhaustively. For example, the $>$ 35,000 citizen scientists of the Milky Way Project classified roughly 45 GB of image data from Spitzer. Current and next-generation astronomical datasets are many thousands of times larger than this, suggesting tens of millions of citizen scientists would be needed for similar exhaustive, manual searches.
+First, human classification is time consuming, and people-hours are a limited resource. Even by enlisting large communities of citizen scientists, data from next generation surveys will be too large to search exhaustively. For example, the $>$ 35,000 citizen scientists of the Milky Way Project classified roughly 45 GB of image data from \emph{Spitzer}. Current and next-generation astronomical datasets are many thousands of times larger than this, suggesting tens of millions of citizen scientists would be needed for similar exhaustive searches through tera- and petabyte datasets.
 
-Second, many scientifically important tasks are not suitable for enlisting the public. Part of the success of the Milky Way Project is due to the fact that the Spitzer images are beautiful, contain many bubbles, and are compelling to browse through. Searches for very rare or less aesthetic objects, on the other hand, are more tedious and less likely to entice large citizen science communities. 
+Second, many scientifically important tasks are not suitable for enlisting the public. Part of the appeal of the Milky Way Project is due to the fact that the \emph{Spitzer} images are beautiful, contain many bubbles, and are compelling to browse through. Searches for very rare objects, or tasks where the scientific justification is less apparent to a citizen scientist, may be less likely to entice large volunteer communities. \cite{Raddick13} considers the motivations of citizen scientists in greater detail.
 
-Finally, manual classification is not easily repeatable, and hard to calibrate statistically. For example, it is unknown how well the consensus opinion among citizen scientists corresponds to consensus among astronomers. The MWP catalog does not include any estimate of the probability that each object is a real bubble, as opposed to other structures in the ISM.
+Finally, manual classification is not easily repeatable, and hard to calibrate statistically. For example, it is unknown how well the consensus opinion among citizen scientists corresponds to consensus among astronomers. The MWP catalog does not include any estimate of the probability that each object is a real bubble, as opposed to another structure in the ISM. 
 
-Automatic classifications driven by machine learning techniques nicely complement human classification. Such an approach easily scales to large data volumes and is immune to some of the factors that affect humans, like boredom and fatigue. Furthermore, because algorithmic classifications are systematic and repeatable, they are easier to interpret and statistically characterize. 
+Automatic classifications driven by machine learning techniques nicely complement human classification. Such an approach easily scales to large data volumes and is immune to some of the factors that affect humans, like boredom and fatigue. Furthermore, because algorithmic classifications are systematic and repeatable, they are easier to interpret and statistically characterize. Despite the structural complexity of the ISM, \cite{Beaumont11} demonstrated that automatic classification algorithms can discriminate between different ISM structures based upon morphology.
 
 The downside to automated classification for tasks like bubble detection is that the algorithms typically require a training set of example objects to classify. Fortunately, the Milky Way Project catalog provides just such a training set. We build an automatic bubble detector from these data in the present paper. There are several reasons to do this:
 
@@ -103,7 +104,7 @@ The downside to automated classification for tasks like bubble detection is that
 \section{Classification Method}
 \label{sec:method}
 
-Our goal is to use the set of citizen-scientist-identified bubbles to build an automatic detector that, when presented with a region of the sky in the \textit{Spitzer} {\sc glimpse} and {\sc mipsgal} surveys, accurately determines whether or not the image contains a bubble. Our approach, which we name Brut, is an example of a supervised learning problem. Here is a brief overview of the task:
+Our goal is to use the set of citizen-scientist-identified bubbles to build an automatic detector that, when presented with a region of the sky in the  \textit{Spitzer} {\sc glimpse} and {\sc mipsgal} surveys, accurately determines whether or not the image contains a bubble. Our approach, which we name Brut, is an example of a supervised learning problem. Here is a brief overview of the task:
 
 \begin{enumerate}
 \item Build a representative training set of examples of bubble and non-bubble images. This will be derived from the MWP dataset.
@@ -114,15 +115,15 @@ Our goal is to use the set of citizen-scientist-identified bubbles to build an a
 
 \subsection{Training Data}
 \label{sec:method_training_data}
-The MWP catalog is a natural choice for a training dataset. However, as shown in Figure \ref{fig:gallery}, the catalog as a whole contains many examples of objects that are not bubbles, and can compromise the training process. Thus, we manually curated a list of 468 objects in the Milky Way Project catalog of large objects which were clear examples of bubbles. We focus our attention on objects in the large bubble catalog since the web interface used to build the small catalog was different, and may have different selection biases \citep{Simpson12}. The large bubble catalog contains 3744 out of 5106 total bubbles in the MWP catalog, all of which have semimajor axes $a \geq 13.5''$.
+The MWP catalog is a natural choice for a training dataset. However, as shown in Figure \ref{fig:gallery}, the catalog as a whole contains many examples of objects that are not bubbles, and can compromise the training process. Thus, we manually curated a list of 468 objects in the Milky Way Project catalog which were clear examples of bubbles. We focus our attention on objects in the large bubble catalog, which contains 3744 out of 5106 total bubbles, with simimajor axes  $a \geq 13.5''$  \citep{Simpson12}. We focus on the large bubble catalog since the web interface used to build the small catalog was different, and may have different selection biases. The largest bubble in the MWP catalog has a semi major axis $a=10.3'$. This upper limit is set by the widest-field images presented to citizen scientists -- we discuss an implication of this cutoff in Section \ref{sec:prob}.
 
-We also require an example set of non-bubbles. In principle, any random region of the sky that doesn't overlap an object in the MWP catalog is a candidate negative example -- while some of these fields actually contain bubbles not in the MWP catalog, they are rare enough that they don't  impact the training. However, we found that selecting negative examples at random was sub-optimal. The reason for this is that most random fields are nearly empty, and easily distinguished from fields with bubbles. Classifiers generated from such a dataset incorrectly labeled nearly any field containing ISM structure as a bubble.
+Training also requires an example set of non-bubbles. In principle, any random region of the sky that doesn't overlap an object in the MWP catalog is a candidate negative example -- while some of these fields actually contain bubbles not in the MWP catalog, they are rare enough that they don't  impact the training. However, we found that selecting negative examples at random was sub-optimal. The reason for this is that most random fields are nearly empty, and easily distinguished from fields with bubbles. Classifiers generated from such a dataset incorrectly labeled nearly any field containing ISM structure as a bubble.
 
-A better set of negative examples includes more examples of fields containing structure (Figure \ref{fig:bootstrap_neg}). We built such a collection in a bootstrapped fashion. Starting with random negative examples, we trained a classifier and used it to scan a large number (20,000) of negative fields. We then discarded half of the initial negative examples (those classified most confidently as not containing bubbles), and replaced them with a random sample of the mis-classified examples. We repeated this process several times, but found that one iteration was usually sufficient to build a good set of training data.
+A better set of negative examples includes more fields containing structure (Figure \ref{fig:bootstrap_neg}). We built such a collection in a bootstrapped fashion. Starting with random negative examples, we trained a classifier and used it to scan a large number (20,000) of negative fields. We then discarded half of the initial negative examples (those classified most confidently as not containing bubbles), and replaced them with a random sample of the mis-classified examples. We repeated this process several times, but found that one iteration was usually sufficient to build a good set of training data.
 
 \begin{figure}[h!]
 \includegraphics{bootstrap_neg}
-\caption{Examples of typical randomly selected negative examples (left), and ``hard'' examples (right)}
+\caption{Examples of typical randomly selected negative examples (left), and ``hard'' examples (right). Including more hard examples produces more discriminating classifiers.}
 \label{fig:bootstrap_neg}
 \end{figure}
 
@@ -132,40 +133,48 @@ Supervised classification algorithms distinguish between classes of objects base
 
 In the case of image classification, the most obvious choice for a feature vector is simply the numerical value of the pixels themselves. This turns out to be a poor choice, because extended objects like bubbles are characterized by correlations between hundreds or thousands of pixels, and any individual pixel is virtually irrelevant to the classification task. Machine learning algorithms generally perform better when individual elements of the feature vector are more important to the classification, and less dependent on the value of other feature vector elements.
 
-Our feature vectors have been designed based on insights in the automated face detection literature \citep{ViolaJones}.  The basic strategy is to encode a very large number ($\sim$40,000) of generic statistics about extended structures at various positions and scales. This strategy seems to be more effective then trying to tune a feature vector to the specific object being identified. While most elements in the feature vector will have no predictive power in the classification, the appropriate learning algorithm will simply ignore this information.
+Our feature vectors have been designed based on insights in the automated face detection literature \citep{ViolaJones}.  The basic strategy is to encode a very large number ($\sim$40,000) of generic statistics about extended structures at various positions and scales. This strategy seems to be more effective than trying to tune a feature vector to the specific object being identified. While most elements in the feature vector will have no predictive power in the classification, the appropriate learning algorithm will simply ignore this information.
 
 To construct our feature vector for a given region in the sky, we first extract a (40x40) pixel postage stamp of the field from IRAC 8 \um\, and MIPS 24 \um\, images. Following a scheme similar to \cite{Simpson12}, these images are intensity clipped at the 1 and 97th percentile, normalized to maximum intensity of 1, and passed through a square root transfer function. This scaling tends to do a good job of emphasizing ISM structure, making bubbles more visible to the eye. Then, the following properties were extracted from each postage stamp, and concatenated to form the feature vector:
 
 \begin{enumerate}
 \item The wavelet coefficients from the Discrete Cosine and Daub4 wavelet transforms. These coefficients encode how much power is in various spatial frequencies.
-\item The image dot product\footnote{i.e., the sum of the pixel-by-pixel product of two images} of each image with template images of rings of different size and thickness. Bubbles are morphologically similar to these templates, and presumably have larger dot products than a random intensity distribution.
+\item The image dot product\footnote{i.e., the sum of the pixel-by-pixel product of two images} of each image with 49 template images of circular rings of different size and thickness. Bubbles are morphologically similar to these templates, and presumably have larger dot products than a random intensity distribution.
 \item The byte size of each compressed postage stamp image -- images substantially more or less smooth than a bubble compress to smaller and larger files, respectively.
-\item The DAISY features of the image \citep{DAISY}, which characterize the local gradients in an image and have been useful in other feature recognition contexts.
+\item The DAISY features of the image \citep{DAISY}. DAISY features are derived from measurements of local intensity gradients, and encode information about simple shapes in images; they are conceptually similar to edge detection filters.
 \end{enumerate}
 
 \subsection{Training}
-While there are many algorithms designed to learn class labels form a training set of feature vectors, we focus here on the Random Forest algorithm \citep{Breiman01}. Random Forests are aggregates of a simpler learning algorithm called a decision tree. A decision tree makes classifications by passing each feature vector through the nodes of a tree diagram. Each node consists of a simple boolean test of one element of the feature vector (e.g., $F_3 > 5$). Feature vectors traverse the left or right paths through the tree based on whether each test is true or false, until they reach a terminal node. The terminal node contains the final classification (in the present context, ``Bubble'' or ``Not Bubble''). Decision trees are constructed in a greedy, stage-wise fashion: each boolean test is chosen to separate the set of training data into two subclasses that are more cleanly partitioned between classes. Several different heuristics can be used to measure how ``clean'' the partition is.
+While there are many algorithms designed to learn classifications form a training set of feature vectors, we focus here on the Random Forest algorithm \citep{Breiman01}. Random Forests are aggregates of a simpler learning algorithm called a decision tree. A decision tree is conceptually similar to the game twenty questions: in this game, one player asks a series of yes/no questions in an attempt to deduce the identity of a hidden object selected by another player. Likewise, a decision tree classifies an object by performing several boolean tests on elements of that object's feature vector (e.g., $F_3 > 5$). These tests are arranged in a binary tree. The decision tree algorithm traverses this tree for each object, traversing the left or right subtree depending on whether each boolean test is True or False. The leaves of the tree contain the final classification (in the present context, ``bubble'' or ``not bubble'').
 
-On their own, decision trees are prone to over-fitting the training data by adding too many nodes. Random Forests overcome this problem by building several trees on different subsets of the data. The final classification is made by taking the majority vote of each subtree. This mitigates over-fitting in the individual trees, since over-fitting is sensitive to the specific subset of data used, and hence averages away. Random forests have proven effective in many machine learning contexts \citep{Kuhn13}.
+The decision tree is constructed from the training data, where the feature vectors and classification are both known. Trees are built one node at a time, in a greedy fashion -- that is, at every step of the learning process, a node is added to the tree to maximize the tree's classification performance on the training data. Several different heuristics can be used to measure classification performance.
 
-In addition to their good performance and robustness against over fitting, Random Forests have several other advantageous properties: it is possible to interpret how important each element in the feature vector is to the classification, the algorithm naturally ignores irrelevant elements of the feature vector, and it is conceptually and computationally simple.
+On their own, decision trees are prone to over-fitting the training data by adding too many nodes. In a more traditional fitting context, this is analogous to adding too many terms to a polynomial fit of noisy data -- in both situations, the model describes the input data very well, but does not generalize to new predictions. Random Forests overcome this problem by building several trees on different subsets of the data. Since over-fitting is sensitive to the exact input data used, each individual tree in a Random Forest over-fits in a different way. By averaging the classifications of each tree, the Random Forest mitigates over-fitting. Random Forests have proven effective in many machine learning contexts \citep{Kuhn13}.
+
+In addition to good performance and robustness against over fitting, the Random Forest algorithm has several other advantageous properties: it is possible to interpret how important each element in the feature vector is to the classification, the algorithm naturally ignores irrelevant elements of the feature vector, and it is conceptually and computationally simple.
 
 \subsection{Hyperparameter Optimization}
-The Random Forest algorithm has a small number of tunable parameters. The most important of these are the number of trees in the forest, and the choice of splitting heuristic used when building each tree. We determined good settings for these hyper-parameters using cross validation. We partitioned the training data into two sets, and used the first set to train the algorithm with a given set of hyper-parameters. The second set of cross-validation data was used to evaluate the model. Then, the hyper parameters were adjusted and the process repeated. We chose the hyper-parameters that maximized the performance on the cross-validation data -- we chose forests with 800 trees, using the information gain splitting heuristic \citep{Raileanu04}.
+The Random Forest algorithm has a small number of tunable parameters. The most important of these are the number of trees in the forest, and the heuristic used to measure classification quality when building each tree. We determined good settings for these ``hyper-parameters'' using cross validation. During cross validation, the training data is partitioned into two sets. The model is fit to the first set using a given set of hyper-parameters, and is evaluated on the second set. This process repeats for each combination of hyper-parameters, and the combination with the best performance on the test data is used for the final model. From our cross-validation analysis, we chose forests with 800 trees, using the information gain heuristic \citep{Raileanu04}.
 
 \subsection{Final Model}
 
-Classifiers cannot be used to re-classify the data used to train them, due to the possibility of over-fitting. Thus, to obtain valid classifications for all fields, we constructed three classifiers. Each classifier is trained using data from two-thirds of the sky, and used to classify the remaining third. The sky is partitioned into thirds based on the modulus of the nearest whole longitude: for example, the first classifier is trained on examples where $0.5 < (\ell \mod{3})  < 2.5$, and used to classify fields where ($\ell \mod{3}) < 0.5 ~ || ~(\ell \mod{3}) > 2.5 $
+Classifiers cannot be used to re-classify the data used to train them, due to the possibility of over-fitting. Thus, to obtain valid classifications for all fields, we constructed three classifiers. Each classifier was trained using data from two-thirds of the sky, and used to classify the remaining third. The three training zones are interleaved longitude sections, so that each classifier is sensitive to trends with longitude. Figure \ref{fig:zone} depicts how the $0 < \ell < 10$ region is partitioned -- the shaded regions denote the portion of the sky used to train each classifier. The three classifiers are identical apart from the longitude zones used for training and classification.
+
+\begin{figure}[h!]
+\includegraphics{zones}
+\caption{Illustration of the zones used to train each classifier. Each classifier is trained using the data from the shaded regions in its zone, and used to classify the light regions.}
+\label{fig:zone}
+\end{figure}
 
 \subsection{Using the classifier}
 
 The output from Brut is a score between -1 and 1, which is directly proportional to the fraction of trees in the forest which classify a feature vector as a bubble. This score provides more information than a simple binary classification, as it gives some sense of the confidence of the classification. Furthermore, one can adjust the threshold that defines when an object is considered to be a bubble. Increasing the threshold increases the reliability of the catalog, at the cost of completeness.
 
-One standard way to summarize the performance of a classifier is to plot the false positive rate (fraction of negative examples incorrectly classified) versus the true positive rate (fraction of bubbles currently classified) as the threshold varies. This is called the Receiver Operating Characteristic, and is shown for the three classifiers in Figure \ref{fig:roc}. The false positive rate is measured by classifying $\sim 15000$ random negative fields, and the true positive rate is measured using the high-quality subset of the MWP catalog described above. Recall that the set of bubbles in this test set were selected because they are very well defined. Thus, Figure \ref{fig:roc} overestimates the true positive rate when presented with more ambiguous bubbles. We compare the performance of the classifier on more representative bubbles in Section \ref{sec:expert}.
+One standard way to summarize the performance of a classifier is to plot the false positive rate (fraction of negative examples incorrectly classified) versus the true positive rate (fraction of bubbles correctly classified) as the threshold varies. This is called the Receiver Operating Characteristic, and is shown for the three classifiers in Figure \ref{fig:roc}. The false positive rate is measured by classifying $\sim 15000$ random negative fields, and the true positive rate is measured using the high-quality subset of the MWP catalog described above. Recall that the set of bubbles in this test set were selected because they are very well defined. Thus, Figure \ref{fig:roc} overestimates the true positive rate when presented with more ambiguous bubbles. We compare the performance of the classifier on more representative bubbles in Section \ref{sec:expert}.
 
 \begin{figure}[h!]
 \includegraphics{roc}
-\caption{The tradeoff between false positive rate and true positive rate, for each of the three classifiers in Brut.}
+\caption{The tradeoff between false positive rate and true positive rate, for the three classifiers in Brut. Each classifier is trained using a different zone, depicted in Figure \ref{fig:zone}.}
 \label{fig:roc}
 \end{figure}
 
@@ -173,39 +182,17 @@ One standard way to summarize the performance of a classifier is to plot the fal
 \subsection{Building a Catalog}
 \label{sec:build}
 
-Using our automatic bubble classifier to conduct a full search for Bubbles in \textit{Spitzer} data is straightforward. The main task involves scanning the classifier over all images, at all scales. At each of these regions, the classifier yields a score, representing its confidence that the field contains a bubble. A simple threshold on this score identifies regions likely to contain a bubble -- from the discussion of Figure \ref{fig:roc} above, adjusting this threshold sets the tradeoff between completeness and reliability. 
+Using our automatic bubble classifier to conduct a full search for bubbles in \textit{Spitzer} data is straightforward. The main task involves scanning the classifier over all images, at all scales. At each of these regions, the classifier yields a score, representing its confidence that the field contains a bubble. A simple threshold on this score identifies regions likely to contain a bubble -- from the discussion of Figure \ref{fig:roc} above, adjusting this threshold sets the tradeoff between completeness and reliability. Note that Brut only attempts to determine the location and size of bubbles. Citizen scientists, on the other hand, were able to constrain the aspect ratio, position angle, and thickness of each object. 
 
-In practice, the classifier is insensitive to small adjustments to the size or location of the field. As a result, bubbles are usually associated with a cluster of postage stamps that rise above the detection threshold (the grey boxes in Figure \ref{fig:cluster}). We follow a simple, greedy procedure to merge these individual detections. Given a collection of postage stamp descriptions (location and scale), this procedure identifies the two nearest locations at similar scales, and discards the location assigned a lower score by the classifier. This process repeats until no two fields are close enough to discard. Two fields are close enough to merge if they are separated by less than the radius of either field, and have sizes that differ by less than 50\%. The blue box in Figure \ref{fig:cluster} shows the result of merging detections.
+In practice, the classifier is insensitive to small adjustments to the size or location of the field. As a result, bubbles are usually associated with a cluster of regions that rise above the detection threshold (the white circles in Figure \ref{fig:cluster}). We follow a simple procedure to merge these individual detections. Given a collection of raw detections, this procedure identifies the two nearest locations at similar scales, and discards the location assigned a lower score by the classifier. This process repeats until no two fields are close enough to discard. Two fields are close enough to merge if they are separated by less than the radius of either field, and have sizes that differ by less than 50\%. The red circle in Figure \ref{fig:cluster} shows the result of merging detections.
 
 \begin{figure}[h!]
 \includegraphics{cluster}
-\caption{An illustration of how Brut merges multiple bubble detections.}
+\caption{An illustration of how Brut merges multiple bubble detections. Each white circle is a location with a high Brut score. The red circle is the region with the highest brut score, and is used as the final detection.}
 \label{fig:cluster}
 \end{figure}
  
- 
 This practice works well for isolated bubbles, but occasionally fails for bubble complexes with multiple, overlapping bubbles. A more sophisticated clustering analysis may well perform better in this situation.
-
-\begin{comment}
-\subsection{Classifying the l=35 field}
-\label{sec:case_study}
-To better understand the successes and failures of our classifier, we have analyzed the longitude range $34.5^\circ < \ell < 35.5^\circ$ in detail. In our first analysis, we scanned for all bubbles above a minimum size $r _{\rm min} = 80''$ \todo{Is this r or d?}, with scores above $s_{\rm min} = 0.55$. This search yielded 25 bubbles after merging. 
-
-Among the 25 automatic detections, 13 are unambiguous bubbles with clear counterparts in the MWP catalog. A further four objects appear to be bubbles as judged by the authors, but are part of bubble complexes. While the complexes are identified at least once in both catalogs, each catalog decomposes the complex slightly differently. Thus, these 4 objects don't have an obvious one-to-one relationship with an object in the MWP catalog. Figure \ref{fig:cluster_confusion} shows an example of one region of confusion. The automated classifier discovers two new candidate bubbles with no counterpart in the MWP catalog. \todo{Lookup what the MWP images for these regions look like. Why weren't they detected? My guess is contrast}. The remaining 6 objects in the automated catalog are false positives -- three are regions containing a bright and/or extended 24\um\, point source confused for a bubble interior, and three are regions with 8 \um\, nebulosity that don't appear shell-like.
-
-\begin{figure}[h!]
-\includegraphics{cluster_confusion}
-\caption{An example cluster of bubbles. The Brut and MWP catalogs tend to decompose these complex regions differently.}
-\label{fig:cluster_confusion}
-\end{figure}
- 
-In this same region, there are 32 objects in the MWP catalog, and 11 are unassociated with the automatic detections. Seven of these are judged by the authors to be false positives -- they are mostly regions of 8 \um\, nebulosity that don't appear to be shell-like or associated with young stars.  Five appear to be true bubbles, wrongly rejected by the automated classifier. The remaining six bubbles were not considered by the classifier -- three were too close to the image edge to be analyzed, and three were smaller than the minimum search scale (we return to these objects in the next subsection). 
-
-These numbers allow us to estimate the reliability and completeness of both catalogs. Assuming that there are no other bubbles in this region with $r > s_{\rm min}$ missed by both classifiers (but still detectable from the image data), there are roughly 24 detectable bubbles in this region -- 13 bubbles present in both catalogs, 5 objects only in the MWP catalog, 2 objects only in the automated catalog, and $\sim$ 4 bubbles in bubble complexes. The automated catalog recovers 80\% (19/24) of the bubbles, and mis-classifies 24\% (6/25) of detections. The Milky Way Project performs similarly: it recovers 92\% of bubbles (22/24), and mis-classifies 23\% of its detections (7/31).
-
-\subsubsection{Searching for small bubbles}
-In the previous analysis, three bubbles in the MWP catalog were not included in the automated catalog because they were smaller than the smallest scales scanned over.  These objects would otherwise have been included -- that is, the classifier assigns each bubble a high score. We thus repeated the above analysis, with a lower value of $s_{\rm min}$. This smaller-scale scan recovers the three small bubbles missed by the first scan. In addition, it discovers 4 additional small bubbles not in the MWP catalog. \todo{Are these in the small object catalog?}. However, false positive rate is also higher -- at very small scales, the classifier more easily confuses bright 24 \um\, sources as bubble interiors, and find's more coincidental 8\um\, nebulosity that is vaguely ring-like. Overall, the false positive rate is 42\% when including a search for small bubbles, and detections not in the MWP catalog are 4 times more likely to be false positives than legitimate bubbles. From this, we conclude that our classifier is not currently suitable for searching for small bubbles.
-\end{comment}
 
 \section{Expert Validation}
 \label{sec:expert}
@@ -214,48 +201,44 @@ To evaluate the performance of Brut, we need a set of ``ground truth'' classific
 
 The subjectivity of bubble identification has received only limited attention. The MWP catalog includes a ``hit rate'' measurement that lists the fraction of citizen scientists who identify a specific bubble, relative to the total number of users who viewed an image containing that bubble. However, as discussed above, the Milky Way Project catalog contains many objects besides bubbles. Thus, while the hit rate communicates how visually salient a particular ISM feature appears to MWP users, it does not directly convey how much consensus astronomers have about the astrophysical nature of that feature.
 
-To better measure the level of expert consensus in bubble identification, we conducted a small online survey. The astronomer participants of this survey were presented with a sequence of 92 Spitzer images at three zoom levels and two contrast settings. They were asked to assign each image to one of three categories: clear examples of bubbles or \hii\, regions, ambiguous or irregular bubbles, or Non-bubbles. Appendix A discusses the survey setup in more detail.
+To better measure the level of expert consensus in bubble identification, we conducted a small online survey. The astronomer participants of this survey were presented with a sequence of 92 \emph{Spitzer} images at three zoom levels and two contrast settings. They were asked to assign each image to one of three categories: clear examples of bubbles or \hii\, regions, ambiguous or irregular bubbles, or Non-bubbles. Appendix A discusses the survey setup in more detail.
 
 \subsubsection{Validation of the Milky Way Project Catalog}
 \label{sec:expert_mwp}
-Of the 92 images in the expert survey, 45 were a random subset of objects in the MWP catalog. Figure \ref{fig:expert_mwp_votes} shows the voting breakdown for these objects. Each row corresponds to a single object, and the red, orange, and blue bars show the fraction of experts who classified the image in each category. The darkened color in each row indicates the most popular classification.  We call attention to several aspects of this distribution: 
+Of the 92 images in the expert survey, 45 were a random subset of objects in the MWP catalog (the remaining fields are discussed in the next section). Figure \ref{fig:expert_mwp_votes} shows the voting breakdown for these objects. Each row corresponds to a single object, and the red, orange, and blue bars show the fraction of experts who classified the image in each category.  We call attention to several aspects of this distribution: 
 
 
 \begin{figure}[h!]
 \includegraphics{expert_mwp_votes}
-\caption{The distribution of expert classifications for 41 bubbles in the Milky Way Project catalog. Each row corresponds to an image, and the colored bars in that row indicate the fraction of experts who categorized the image as a Bubble (blue), Irregular or Ambiguous Bubble (orange), and Non-Bubble (red).}
+\caption{The distribution of expert classifications for 41 objects in the Milky Way Project bubble catalog. Each row corresponds to an image, and the colored bars in that row indicate the fraction of experts who categorized the image as a Bubble (blue), Irregular or Ambiguous Bubble (orange), and Non-Bubble (red).}
 \label{fig:expert_mwp_votes}
 \end{figure}
 
 \begin{enumerate} 
-\item Only 15\% of these objects were unanimously classified as clear bubbles -- this number increases to about 50\% if all irregular and ambiguous objects are optimistically treated as bubbles. 
-\item Depending on how many irregular/ambiguous objects are bubbles, between 10 and 30\% of objects in the MWP catalog are judged by experts to be interlopers -- that is, objects which are unlikely to be the result of a young star sculpting the surrounding ISM.
-\item The most popular category for each object is chosen by 70\% of experts on average. In other words, when using Spitzer images, determining the ``true'' nature of a typical object in the MWP catalog is subjective at the 30\% level.
+\item Only 15\% of these objects -- 7 out of 41 -- were unanimously classified as clear bubbles -- this number increases to about 50\% if all irregular and ambiguous objects are optimistically treated as bubbles. 
+\item Depending on how many irregular/ambiguous objects are bubbles, between 10 and 30\% of objects in the MWP catalog are judged by experts to be interlopers -- that is, objects which are unlikely to be the result of a young star sculpting the surrounding ISM. While some of these regions might be other interesting astrophysical objects like supernova remnants, most appear to be incidental, non-dynamical structure in the ISM.
+\item The most popular category for each object is chosen by 70\% of experts on average. In other words, when using \emph{Spitzer} images, determining the ``true'' nature of a typical object in the MWP catalog is subjective at the 30\% level. Citizen scientists, by comparison, exhibit much lower levels of agreement; the average hit-rate for these objects is 0.2. 
 \end{enumerate}
 
-Is it possible to determine which of the remaining objects in the MWP catalog would likely be rejected as interlopers by experts? The hit rate of each object in the catalog might correlate with expert opinion, and be a useful filter. Likewise, the confidence score computed by Brut might identify interlopers. Figure \ref{fig:expert_mwp_score} plots these these two quantities compared to the expert category. The Y position of each point denotes the level of consensus for each object -- the percentage of experts who chose the plurality category. Both metrics partially separate Bubbles from the other categories. The Hit Rate is more effective at penalizing orange and red objects, which are confined to Hit Rate $<0.2$ in panel a. On the other hand, the hit rate is ineffective at isolating bubbles with high expert consensus. The Brut score is more effective at identifying these high-consensus bubbles, which is apparent by the cluster of blue points in the upper right corner of panel b. We also plot in Figure \ref{fig:expert_mwp_score}c a joint score -- the sum of the normalized and mean-subtracted Brut score and hit rate.  This combines the strengths of the individual metrics, and achieves the best separation.
+Is it possible to determine which of the remaining objects in the MWP catalog would likely be rejected as interlopers by experts? The hit rate of each object in the catalog might correlate with expert opinion, and be a useful filter. Likewise, the confidence score computed by Brut might identify interlopers. Figure \ref{fig:expert_mwp_score} plots the citizen's hit rate and Brut's confidence score compared to the expert classification. The Y position of each point denotes the level of consensus for each object -- the percentage of experts who chose the plurality category. Both metrics partially separate bubbles from the other categories. The hit rate is more effective at penalizing orange and red objects, which are confined to hit rate $<0.2$ in panel a. On the other hand, the hit rate is ineffective at isolating bubbles with high expert consensus. The Brut score is more effective at identifying these high-consensus bubbles, which is apparent by the cluster of blue points in the upper right corner of panel b. We also plot in Figure \ref{fig:expert_mwp_score}c a joint score -- the sum of the normalized and mean-subtracted Brut score and hit rate.  This combines the strengths of the individual metrics, and achieves the best separation.
 
 \begin{figure*}
 \includegraphics{expert_mwp_score}
-\caption{The ability for the MWP hit rate and Brut score to predict expert expert classifications for objects in the MWP catalog. Each circle represents an object in the MWP catalog. Color depicts the most popular classification, and the y-position indicates the fraction of experts who chose this category. The
-black lines estimate the bubble probability (right Y axis), obtained via logistic regression to the object category. The Joint metric, which combines the Hit Rate and Brut score, is best able to predict expert classifications.}
+\caption{The ability for the MWP hit rate and Brut score to predict expert expert classifications for objects in the MWP catalog. Each circle represents an object in the MWP catalog. Color depicts the most popular classification, and the y-position indicates the fraction of experts who chose this category. The curves estimate the bubble probability (right Y axis), obtained via logistic regression to the object category. The Joint metric, which combines the Hit Rate and Brut score, is best able to predict expert classifications. The title reports the log-likelihood of each logistic fit, according to Equation \ref{eq:likelihood}. Panel d depicts the ideal situation, where classes are unambiguous.}
 \label{fig:expert_mwp_score}
 \end{figure*}
 
-The expert reclassifications of this sample of Milky Way Project objects can be used to convert a raw score like the joint score to a calibrated probability that an expert would classify an object as a bubble, given that score. To achieve this, we perform a logistic regression against each of the three scores (hit rate, Brut score, and joint score). The logistic regression only considers whether the plurality category for each object is a bubble -- the consensus information is not used. The black curves in Figure \ref{fig:expert_mwp_score} trace this curve, and show the predicted probability that an object is a bubble given the score on the X axis. Panel d in Figure \ref{fig:expert_mwp_score} shows the ideal situation, where a scoring metric perfectly separates two classes of unanimously-categorized objects. The joint score combines the information from citizen scientists and Brut, and comes closest to this ideal. While the logistic curves for the hit rate and joint score look similar, the latter curve is a better fit to the data as judged by the higher likelihood of the data under this model.
+The expert reclassifications of this sample of Milky Way Project objects can be used to convert a raw score like the joint score to a calibrated probability that an expert would classify an object as a bubble, given that score. To achieve this, we perform a logistic regression against each of the three scores (hit rate, Brut score, and joint score). The logistic regression only considers whether the plurality category for each object is a bubble -- the consensus information is not used. The grey curves in Figure \ref{fig:expert_mwp_score} trace this curve, and show the predicted probability that an object is a bubble given the score on the X axis. We reiterate that this is \emph{not} a fit through the (X, Y) cloud of points in the plot; rather, it is (informally) a fit to the fraction of circles which are blue at each X location of the plot. The title of each panel reports the quality of each fit, as defined by the log-likelihood:
 
-\begin{comment}
-Finally, in Figure \ref{fig:expert_roc} we present the ROC curve of each of the three scores, demonstrating the tradeoff of between false and true positive rate.
+\begin{equation}
+\mathcal{L} = \sum_{\rm Bubbles} \log\left(P\left({\rm Bubble | Score}\right)\right) + \sum_{\rm Non-Bubbles} \log\left(1 - P\left({\rm Bubble | Score}\right)\right)
+\label{eq:likelihood}
+\end{equation}
 
-\begin{figure}[h!]
-\includegraphics{expert_roc}
-\caption{The receiver operating characteristic curve for the MWP objects reclassified by experts. Each line shows the false positive rate and true positive rate obtained by thresholding the MWP catalog according to the hit rate, Brut score, or joint score. }
-\label{fig:expert_roc}
-\end{figure}
-\end{comment}
+Panel d in Figure \ref{fig:expert_mwp_score} shows the ideal situation, where a scoring metric perfectly separates two classes of unanimously-categorized objects. The joint score combines the information from citizen scientists and Brut, and comes closest to this ideal. While the logistic curves for the hit rate and joint score look similar, the latter curve is a better fit to the data as judged by the higher likelihood of the data under this model.
 
 \subsubsection{Uniform Classification}
-The remaining 47 regions in the expert survey were selected randomly from the full set of fields analyzed during Brut's full-scan of the Spitzer images. A fully random sample from this collection is uninteresting, since the majority of fields are blank areas of the sky. Instead, these 47 images are approximately uniformly distributed in the Brut confidence score. We refer to these images as the ``uniform'' sample. 
+The remaining 47 regions in the expert survey were selected randomly from the full set of fields analyzed during Brut's full scan of the \emph{Spitzer} images. A fully random sample from this collection is uninteresting, since the majority of fields are blank areas of the sky. Instead, these 47 images are approximately uniformly distributed in the Brut confidence score. We refer to these images as the ``uniform'' sample. 
 
 The expert vote distribution for these images is shown in Figure \ref{fig:expert_uniform_votes}. There are more non-bubble fields in this sample, but the overall properties are otherwise similar. The average field is classified with a 72\% consensus.
 
@@ -277,21 +260,21 @@ Figure \ref{fig:expert_uniform_score} shows the Brut score for each field in the
 \label{sec:prob}
 Section \ref{sec:expert_mwp} outlines a strategy to combine hit rates with Brut's own confidence score to predict whether or not
 an expert would classify each object in the original MWP catalog as a bubble. We have assigned a bubble probability to each
-object in MWP catalog based on this analysis. The high-probability subsample of this catalog displays several interesting differences compared to the unfiltered catalog. 
+object in MWP catalog based on this analysis (Table \ref{table:prob_table}). The high-probability subsample of this catalog displays several interesting differences compared to the unfiltered catalog. 
 
 To explore the differences between the high and low reliability portions of the MWP catalog, we have split the catalog into three roughly equally-sized groups: those where $P_{\rm bubble} < 0.5$, $0.5 < P_{\rm bubble} < 0.9$,
-and $P_{\rm bubble} > 0.9$. Figure \ref{fig:dist_lon} shows the longitude distribution for each of these groups. The distributions are mostly similar, except at the three longitudes marked with vertical lines. These longitudes exhibit a excess of low-probability bubbles relative to the other groups.  All three fields are in fact sites of large, degree-scale giant \hii\, regions -- two are shown in Figure \ref{fig:wide_fields}. 
+and $P_{\rm bubble} > 0.9$. Figure \ref{fig:dist_lon} shows the longitude distribution for each of these groups. The distributions are mostly similar, except at the three longitudes marked with vertical lines. These longitudes exhibit an excess of low-probability bubbles relative to the other groups.  All three fields are in fact sites of large, degree-scale giant \hii\, regions -- two are shown in Figure \ref{fig:wide_fields}. 
 
 The excess of low-probability objects towards $\ell=-43^\circ$ coincides with a large bubble complex, containing bubbles S108-S111 in \cite{Churchwell06}. The region at $\ell=-55^\circ$ coincides with the Dragonfish nebula, studied by \cite{Rahman11}. Finally, the $\ell=-62^\circ$ region contains the G305 star forming complex studied by \cite{Hindson12}.
 
 To determine whether the overabundance of low-probability sources near giant \hii\, regions indicates a failure of the probabilistic scoring or a bias in citizen scientist annotations, the lead author manually inspected the objects in the $\ell=-61^\circ$ bin. The sum of bubble probabilities for the 25 MWP objects in this bin is 8.09, and implies that an expert would identify $\sim 8$ of these objects as real bubbles if the probabilistic score is correct. Roughly 5-6 of these objects are compelling bubble candidates, which suggests that the excess of low-probability bubbles is not due to an overly conservative scoring strategy. Instead, this points to a real citizen scientist bias towards over-identification of bubbles in active regions like this. The central source in each of these regions creates a large, complex cavity in the ISM, and fluoresces much of the surrounding material as well. This leads to an abundance of coincidental, arc-like features misidentified as bubbles. The scores provided by Brut are able to identify this problem, and exclude the interlopers.
 
-While citizen scientists are prone to over-identify bubbles towards giant \hii\, regions, they are unlikely to identify these large regions themselves. This might be because such objects are to irregular, or simply too big to see well in any single image served during the Milky Way Project. The widest zoom levels at which Brut scans through image data is wider than the widest images seen by citizen scientists, and it recovers some of these regions. For example, Figure \ref{fig:wide_fields} shows in magenta the new regions which Brut scores $>0.2$ on a blind search, that have no match in the MWP catalog. Each panel includes a new detection that is bigger than the biggest previously-cataloged objects. Still, Brut does not identify the large \hii regions themselves as bubbles. 
+While citizen scientists are prone to over-identify bubbles towards giant \hii\, regions, they are unlikely to identify these large regions themselves. This might be because such objects are to irregular, or simply too big to see well in any single image served during the Milky Way Project. The widest zoom levels at which Brut scans through image data is wider than the widest images seen by citizen scientists, and it recovers some of these regions. For example, Figure \ref{fig:wide_fields} shows in magenta the new regions which Brut scores $>0.2$ on a blind search, that have no match in the MWP catalog. Each panel includes a new detection that is bigger than the biggest previously-cataloged objects. Still, Brut does not identify the large \hii\, regions themselves as bubbles. This is partially due to the fact that these large bubbles are absent from the MWP catalog, and thus Brut was never ``taught'' that objects like these should be considered bubbles.
 
 In discussing the longitude distribution of bubbles, \cite{Simpson12} noted a dip in bubble counts at $|\ell| < 10^\circ$. They postulated that this might be because confusion in this busier region makes identification more difficult. However, this dip is most apparent for low-probability objects. In other words, the dip in the longitude distribution is not driven by a decrease in completeness, but rather by an increase in reliability. Perhaps, due to the complex background of emission towards the Galactic center, citizen scientists were less likely to notice subtle, coincidentally arc-like structures in the ISM.
 
 \begin{figure}[h!]
-\includegraphics[width=3.2in]{dist_lon}
+\includegraphics{dist_lon}
 \caption{The longitude distribution for the MWP catalog, partitioned according to the bubble probability score.
 Vertical black lines identify three degree-scale emission complexes with an overabundance of low-probability objects.}
 \label{fig:dist_lon}
@@ -322,11 +305,21 @@ Of the 3661 objects with bubble probability scores, 126 coincide spatially with 
 \label{fig:hii_score}
 \end{figure}
 
+\cite{Anderson11} reports disambiguated kinematic distances for the \hii\, regions in their catalog. Figure \ref{fig:dist_map} shows the position and sizes of the 128 bubbles associated with \hii\, regions with known distances, overlaid on a schematic map of the Galaxy's spiral structure. Four of the low-probability objects associated with \hii\, regions have large angular and linear diameters. However, from manual inspection none of these regions are compellingly associated with a real bubble in the image data. Thus, their match to \hii\, regions seems to be coincidental and arbitrary.
+
+While bubbles cluster around the Sagittarius arm, there are two clusters of bubbles in inter-arm regions -- one beyond the outer arm, and another apparent stream of bubbles around 5kpc, from $30^\circ < \ell < 60^\circ$. A bubble is a broad observational definition that covers several astrophysical phenomena, including \hii\, regions, non-ionized cavities from B star winds, and supernova remnants. Bubbles located on or between spiral arms may well correspond to different astrophysical classes or evolutionary stages. Furthermore, the detectability of bubbles is a complicated mixture of an object's size and brightness as a function of time, as well as the amount of unrelated structure along the line of sight to each object. Population synthesis studies which simulate realistic galactic environments and predict distributions akin to Figure \ref{fig:dist_map} might be able to constrain the relative mixture -- and dynamical importance -- of different classes of bubbles \citep{Robin03,Robitaille12}.
+
+\begin{figure}[h!]
+\includegraphics{dist_map}
+\caption{Positions and sizes of bubbles with kinematic distance measurements from \cite{Anderson11}. The background image is an artist's schematic rendition of the Galaxy's spiral structure (credit NASA/JPL-Caltech/R. Hurt)}
+\label{fig:dist_map}
+\end{figure}
+
 \subsection{Evidence for Triggering}
 
-Bubbles are frequently studied in the context of triggered star formation. The material excavated by bubble-blowing stars might induce subsequent generations of star formation. Two main mechanisms for triggered star formation have been proposed: in the collect and collapse model \citep{Dale07}, material gathered along bubble rims eventually passes a critical density and undergoes gravitational fragmentation and collapse. In the radiatively-driven implosion model, the wind or ionization shock front collides with pre-existing but stable cores, and the resulting compression triggers collapse \citep{Bertoldi89}.
+Bubbles are frequently studied in the context of triggered star formation. The material excavated by bubble-blowing stars might induce subsequent generations of star formation. Two main mechanisms for triggered star formation have been proposed: in the collect and collapse model \citep{Whitworth94, Dale07}, material gathered along bubble rims eventually passes a critical density and undergoes gravitational fragmentation and collapse. In the radiatively-driven implosion model, the wind or ionization shock front collides with pre-existing but stable cores, and the resulting compression triggers collapse \citep{Bertoldi89}.
 
-Establishing that any particular region has triggered star formation is difficult. The typical approach is to identify an overdensity of young stars within/on a bubble rim, and/or to look for an inverse age gradient with bubble radius \citep{Deharveng05, Zavagno06, Koenig08}. Such an analysis is often confounded by small numbers of YSOs and ambiguous line-of-sight distances and stellar ages. Furthermore, it is often unclear whether spatial correlations between bubbles and YSOs imply a triggered relationship between the two, since star formation is a naturally clustered process \citep{Lada03}.
+In any particular region, finding clear evidence for triggered star formation is difficult. The typical approach is to identify an overdensity of young stars within or on a bubble rim, and/or to look for an inverse age gradient with bubble radius \citep{Deharveng05, Zavagno06, Koenig08}. Such an analysis is often confounded by small numbers of YSOs and ambiguous line-of-sight distances and stellar ages. Furthermore, it is often unclear whether spatial correlations between bubbles and YSOs imply a triggered relationship between the two, since star formation is a naturally clustered process \citep{Lada03}.
 
 Such problems can partially be addressed by correlating YSOs with large bubble catalogs like the MWP catalog -- this does not disambiguate correlation from causation, but it can overcome problems related to small-number statistics. \cite{Thompson12} first applied such an analysis using the \cite{Churchwell06} catalog, and \cite{Kendrew12} later repeated this on the MWP catalog. This analysis computes an angular correlation function \citep{Landy93, Bradshaw11}, defined by
 
@@ -334,18 +327,20 @@ Such problems can partially be addressed by correlating YSOs with large bubble c
 w(\theta) = \frac{N_{BY} - N_{BR_Y} - N_{R_BY} + N_{R_BR_Y}}{N_{R_BR_Y}}
 \label{eq:corr}
 \end{equation}
-where $N_{\alpha \beta}$ represents the number of pairs of objects from catalogs $\alpha$ and $\beta$ with a separation of $\theta$, $B$ is a bubble catalog, $Y$ is a YSO catalog, and $R_B$ and $R_Y$ are randomly-distributed bubble and YSO catalogs. Informally, $w(\theta)$ represents the likelihood of finding a YSO at a particular distance $\theta$ from a bubble. 
+where $N_{\alpha \beta}$ represents the number of pairs of objects from catalogs $\alpha$ and $\beta$ with a separation of $\theta$, $B$ is a bubble catalog, $Y$ is a YSO catalog, and $R_B$ and $R_Y$ are randomly-distributed bubble and YSO catalogs. These random locations are chosen to preserve the approximate latitude and longitude distribution of each class of objects, but are otherwise uniformly distributed. Informally, $w(\theta)$ represents the excess likelihood of finding a YSO at a particular distance $\theta$ from a bubble, relative to what is expected from a random distribution of bubbles and YSOs. We normalize the angular offset $\theta$ by the radius of each bubble, such that $w(\theta)$ traces the excess YSOs as a function of offset in bubble radii. An ideal signature of triggered star formation, then, would be a local maximum of $w(\theta)$ at $\theta = 1$. 
 
 We reproduce the Figure 15 of \cite{Kendrew12} in Figure\ref{fig:trigger}a. This shows the angular correlation function between the Milky Way Project Large catalog and RMS catalog of YSOs and compact \hii\, regions \citep{RMS}, as a function of normalized bubble radius. The main signal is a decaying correlation, indicative of the fact that star formation occurs in clustered environments. The prediction from triggered star formation is that there should be an additional peak at $\theta \sim 1$ bubble radius. Such a signal is not obvious in this figure, though \cite{Kendrew12} report evidence for a peak for the largest bubbles in the MWP catalog. Likewise, \cite{Thompson12} report a clearer peak when considering the expert-selected bubbles in \cite{Churchwell06}. 
 
 In Section \ref{sec:expert}, we demonstrated that roughly 30\% of objects in the MWP catalog are interlopers -- random ISM structures incorrectly tagged as bubbles. Furthermore, the relative false positive rate increases towards giant \hii\, regions -- precisely the regions where one might expect triggered star formation to be most apparent. Interlopers might significantly dilute bubble/YSO correlations in the MWP catalog. Fortunately, our bubble probability scores allow us to identify many of these interlopers, yielding a higher reliability catalog that still has 3x as many bubbles as used by \cite{Thompson12}.
 
-Figure \ref{fig:trigger}b shows the same correlation function, for the subsamples partitioned by bubble probability. This reveals an increasingly significant peak from $0.5 < \theta < 1$ bubble radius, as bubble probability increases. As a population, high-probability bubbles in the MWP catalog are more strongly associated with RMS sources near bubble rims. This is similar to the trend with bubble size that \cite{Kendrew12} reported, but the signal here is both stronger and due to a different subsample of bubbles -- the size distribution of bubbles does not vary significantly between the three probability bins.
+Figure \ref{fig:trigger}b shows the same correlation function, for the subsamples partitioned by bubble probability. This reveals an additional excess from $0.5 < \theta < 1$ bubble radius, whose strength increases with bubble probability. This is similar to the trend with bubble size that \cite{Kendrew12} reported, but the signal here is both stronger and due to a different subsample of bubbles -- the size distribution of bubbles does not vary significantly between the three probability bins.
+
+Star formation is a naturally clustered process. The curves in Figure \ref{fig:trigger} trace the excess of RMS YSOs near bubbles relative to a purely random distribution of objects -- they do not measure the excess density of YSOs relative to other star formation regions. The red ``Control'' curve in Figure \ref{fig:trigger} addresses this. This curve was obtained by repositioning each bubble to the location of a random RMS YSO, and re-running the analysis. In other words, the curve shows the natural clustering of YSOs relative to each other. The left-most point of the curve is very large, which is an artifact of the fact that each bubble lines up exactly with the YSO it was repositioned to -- this creates a strong overdensity at very small $\theta$. Beyond this point, however, the curve resembles the $P < 0.5$ subset. The fact that the $P > 0.9$ bubbles fall significantly above the control curve indicates that YSOs are clustered around high-probability bubbles even more strongly than they cluster around one another on average. However, this clustering analysis cannot determine whether the overdensity around $P > 0.9$ bubbles is the result of bubble-triggered star formation, or rather an indication that bubbles form in particularly active star forming regions. 
 
 \begin{figure}[h!]
 \includegraphics[width=3.1in]{trigger}
-\caption{Angular correlation function (Equation \ref{eq:corr}) between Bubbles and sources in the RMS catalog of YSOs. Error estimates are derived via bootstrap resampling from the bubble catalog. Top: the correlation function for all bubbles. Bottom: the correlation function for the
-low, medium, and high-reliability bubbles.}
+\caption{Angular correlation function (Equation \ref{eq:corr}) between bubbles and sources in the RMS catalog of YSOs. Error estimates (shading) are derived via bootstrap resampling from the bubble catalog. Top: the correlation function for all bubbles. Bottom: the correlation function for the
+low (black), medium (orange), and high-reliability bubbles (blue). The red control curve is obtained by repositioning each bubble to coincide with a random YSO -- it measure the general clustering of YSOs.}
 \label{fig:trigger}
 \end{figure}
 
@@ -353,13 +348,13 @@ low, medium, and high-reliability bubbles.}
 \label{sec:blind}
 The previous section focused on using Brut to reassess bubbles previously identified by citizen scientists. We've demonstrated that Brut is successful at identifying the high-reliability subset of the MWP catalog and, conversely, at flagging probable interlopers in the catalog. The result is a purer statistical sample of bubbles in the Milky Way.
 
-The previous analyses did not address the possibility of finding bubbles missing from the MWP catalog. By scanning through all image data, Brut can be used to conduct a blind search for new bubbles. This is a harder task; Brut does not benefit from complementary information about how citizen scientists classify a particular region. However, this task is relevant to future projects where machine learning techniques assist manual search. For tasks where exhaustive human search is infeasible, machine learning algorithms can conduct exhaustive searches and flag interesting candidate objects for human attention or followup observation.
+Now we consider the possibility of finding bubbles missing from the MWP catalog. By scanning through all {\sc glimpse}/{\sc mipsgal} data, Brut can be used to conduct a blind search for new bubbles. Discovering bubbles without knowing the citizen-science hit-rate at each location is a harder task; Brut does not benefit from complementary information about how citizen scientists classify a particular region. However, this task is relevant to future projects where machine learning techniques assist manual search. For applications where exhaustive human search is infeasible, machine learning algorithms can conduct exhaustive searches and flag interesting candidate objects for human attention or followup observation.
 
 We performed a blind search with Brut as follows: starting at a minimum field of view of 80'', we scanned the entire {\sc glimpse}/{\sc mipsgal} survey area of $|\ell| < 65^\circ$, $|b| < 1^\circ$. Each field was offset from its neighbor by 20\% of the field size. At each location, we computed the Brut score. After scanning the entire survey area, we increased the field of view by 25\%, and re-scanned the Galactic plane at this larger scale. This process was repeated up to a maximum field of view of 1 degree. In total, this produced approximately 35 million classifications. Of these, we extracted 58,294 fields with Brut scores greater than 0.2, and merged these following the procedure in Section \ref{sec:build}. 
 
 This process yielded a list of 2407 distinct bubble candidates. According to Figure \ref{fig:expert_uniform_score}, an Expert is about 50\% likely to judge a region with a Brut score of 0.2 as a bubble. Thus, this candidate sample is very generous, and probably includes a substantial interloper population. Using the fit to Figure \ref{fig:expert_uniform_score}, the summed probability for all objects -- and hence the expected number of genuine bubbles in this sample -- is 1243. 1500 objects in the blind search have counterparts in the MWP catalog, and 907 do not. Figure \ref{fig:new_score} shoes the Brut score distribution for objects with and without MWP counterparts. Note that objects with no MWP counterpart are skewed towards lower scores, and the majority of these are interlopers. Brut's blind search does not reveal any significant statistical incompleteness in the MWP catalog.
 
-Still, Brut does recover a handful of genuine bubbles missing from the MWP catalog. The easiest way to find these is to sort the 907 unmatched bubble candidates by Brut score, and manually examine the highest-scoring regions. Figure \ref{fig:new_gallery} presents 8 of the most compelling bubble candidates with now MWP counterparts -- these bubbles are among the 70 highest-scoring regions with now MWP match. We have examined the original Milky Way Project images associated with each region and find that, in most cases, these bubbles are sufficiently close to a bright source that they are hard to see. Because Brut locally adjusts the contrast of each field when building feature vectors, it overcomes this difficulty. At the same time, these eight objects represent $\sim 10\%$ of the high-scoring candidates we examined. The remaining objects are false positives -- many of them smaller substructures of larger bubbles in the MWP catalog, or ambiguous sources of 24\um\, nebulosity. Brut is not discriminating enough to find bubbles missed by the MWP on its own. However, it \textit{is} effective at generating promising candidates to followup on.
+Still, Brut does recover a handful of genuine bubbles missing from the MWP catalog. The easiest way to find these is to sort the 907 unmatched bubble candidates by Brut score, and manually examine the highest-scoring regions. Figure \ref{fig:new_gallery} presents 8 of the most compelling bubble candidates with no MWP counterparts -- these bubbles are among the 70 highest-scoring regions with no MWP match. We have examined the original Milky Way Project images associated with each region and find that, in most cases, these bubbles are sufficiently close to a bright source that they are hard to see. Because Brut locally adjusts the contrast of each field when building feature vectors, it overcomes this difficulty. At the same time, these eight objects represent $\sim 10\%$ of the high-scoring candidates we examined. The remaining objects are false positives -- many of them smaller substructures of larger bubbles in the MWP catalog, or ambiguous sources of 24\um\, nebulosity. Brut is not discriminating enough to find bubbles missed by the MWP on its own. However, it \textit{is} effective at generating promising candidates to followup on.
 
 \begin{figure}[h!]
 \includegraphics{new_score}
@@ -381,27 +376,30 @@ The success of Brut demonstrates the potential synergies that exist between mach
 
 \begin{enumerate}
 \item Professional scientists are best-suited to perform nuanced classification tasks that require domain-specific knowledge. They are also the most resource-limited. 
-\item Citizen scientists outnumber professional scientists by orders of magnitude (in the case of Bubble detection, the factor is roughly 1000:1). They are equally capable with the generic aspects of pattern recognition, but do not possess the domain expertise of professionals.
+\item Citizen scientists outnumber professional scientists by orders of magnitude (in the case of Bubble detection, the factor is nearly 10,000:1). They are equally capable with the generic aspects of pattern recognition, but do not possess the domain expertise of professionals.
 \item Supervised machine learning algorithms have no a-priori pattern recognition ability, and require external training. However, once supplied with this information, computer-driven analyses are reproducible and extremely scalable.
 \end{enumerate}
 
 Brut leverages the information provided by astronomers and citizen scientists alike. Citizen scientist input was used for training, and a smaller dataset of high-quality expert information set was used to convert Brut's classifications into calibrated bubble probabilities. The result is a classifier that is both more precise than the raw citizen scientist catalog, and more complete than the best expert-assembled catalog.
 
-Searching Spitzer images for bubbles is a small enough task that citizen scientists were able to perform an exhaustive search. Consequently, the MWP catalog appears to contain most of the bubbles that one can hope to identify from these images. Brut's main benefit is in providing an independent, probabilistic assessment of the MWP catalog, identifying interlopers in the catalog, and adding a small number of bubbles missed by citizen scientists -- particularly bubbles at the largest scales.
+Searching \emph{Spitzer} images for bubbles is a small enough task that citizen scientists were able to perform an exhaustive search. Consequently, the MWP catalog appears to contain most of the bubbles that one can hope to identify from these images. Brut's main benefit is in providing an independent, probabilistic assessment of the MWP catalog, identifying interlopers in the catalog, and adding a small number of bubbles missed by citizen scientists -- particularly bubbles near bright objects.
 
-However, one can hypothetically envision tools like Brut assisting professional and citizen scientists in real time. For searches for rarer objects in larger datasets, exhaustive human search is infeasible -- both due to boredom and prohibitive data sizes. Had Brut been trained at the start of the Milky Way Project, it would quickly have been able to eliminate many regions as devoid of bubbles. Citizen scientists could have spent more time classifying more ambiguous regions, which is where their input is most valuable (and where the tasks is likely most interesting). These ideas are explored in more depth by \cite{MSR}, and will become increasingly important as data continues to grow.
+However, one can hypothetically envision tools like Brut assisting professional and citizen scientists in real time. For searches for rarer objects in larger datasets, exhaustive human search is infeasible -- both due to boredom and prohibitive data sizes. Had Brut been trained at the start of the Milky Way Project, it would quickly have been able to eliminate many regions as devoid of bubbles. Citizen scientists could have spent more time classifying more ambiguous regions, which is where their input is most valuable (and where the tasks is likely most interesting). These ideas are explored in more depth by \cite{MSR}, and will become increasingly important as data continues to grow. 
+
+Similarly, Brut could easily incorporate additional sources of information. For example, far-infrared observations from \emph{Herschel} constrain the column density and temperature of dust in the vicinity of bubbles \citep{Anderson12}. This additional information can further disambiguate real bubbles from other cavities in the ISM. A followup investigation could supplement Brut's feature vectors with features extracted from \emph{Herschel} data, and retrain the classifiers. This is a promising approach to search for bubbles in the outer galaxy, since \emph{Spitzer} did not systematically survey the outer Galaxy at 8 or 24 \um\, and citizen scientists have not (yet) surveyed this region.
+
 
 \section{Conclusion}
 \label{sec:conclusion}
-We have developed an automatic bubble detector, Brut, using the Random Forest classification algorithm in tandem with a catalog of citizen scientist-identified bubbles in our galaxy. This algorithm is effective at detecting bubbles in Spitzer images. By comparing the confidence scores that Brut computes with expert classifications of a small set of images, we are able to estimate the probability that any given region in Spitzer {\sc glimpse} and {\sc mipsgal} data contains a bubble. We have used Brut to re-assess the objects in the Milky Way Project catalog, and also to perform a full search over {\sc glimpse} and {\sc mipsgal} images for new bubbles.  Several insights have emerged from this analysis:
+We have developed an automatic bubble detector, Brut, using the Random Forest classification algorithm in tandem with a catalog of citizen scientist-identified bubbles in our galaxy. This algorithm is effective at detecting bubbles in \emph{Spitzer} images. By comparing the confidence scores that Brut computes with expert classifications of a small set of images, we are able to estimate the probability that any given region in \emph{Spitzer} {\sc glimpse} and {\sc mipsgal} data contains a bubble. We have used Brut to re-assess the objects in the Milky Way Project catalog, and also to perform a full search over {\sc glimpse} and {\sc mipsgal} images for new bubbles.  Several insights have emerged from this analysis:
 \begin{enumerate}
 \item Roughly 30\% of the objects in the Milky Way Project catalog are interlopers -- structures which a majority of experts would not consider to be likely \hii\, regions or wind blown bubbles.
 \item Brut is able to identify which objects are probable interlopers, and likewise to identify highly probable bubbles. Compared to the MWP catalog as a whole, high-probability bubbles have a narrower latitude distribution, and are nearly 5 times more likely to be associated with \hii\, regions identified by \cite{Anderson11}.
 \item The MWP catalog has a higher concentration of low-probability bubbles near giant \hii\, regions, which fluoresce the surrounding ISM and reveal more coincidental circular structures. Citizen scientists are prone to identify these regions as bubbles, whereas experts and Brut do not.
-\item High probability bubbles  exhibit stronger excesses of YSOs and compact \hii\, regions along bubble rims -- a prediction of triggered star formation theories.
+\item High probability bubbles  exhibit stronger excesses of YSOs and compact \hii\, regions along and interior to bubble rims -- a prediction of triggered star formation theories.
 \end{enumerate}
 
-Image classification remains a difficult problem in many contexts, and techniques like Brut are not yet able to replace human analysis. However, Brut demonstrates that automated techniques are a valuable complement to manual search.  Combining human and machine searches is the most promising avenue for scaling tasks like astrophysical image classification to very large datasets.
+Image classification remains a difficult problem in many contexts, and techniques like Brut are not yet as good as expert human analysis. However, Brut demonstrates that automated techniques are a valuable complement to manual search.  Combining human and machine searches is the most promising avenue for scaling tasks like astrophysical image classification to very large datasets.
 
 
 \begin{thebibliography}{16}
@@ -409,6 +407,19 @@ Image classification remains a difficult problem in many contexts, and technique
 
 \bibitem[Anderson et al.(2011)]{Anderson11} Anderson, L.~D., 
 Bania, T.~M., Balser, D.~S., \& Rood, R.~T.\ 2011, \apjs, 194, 32 
+
+\bibitem[Anderson et 
+al.(2012)]{Anderson12} Anderson, L.~D., Zavagno, A., Deharveng, L., et al.\ 2012, \aap, 542, A10 
+
+\bibitem[Arce et al.(2011)]{Arce11} Arce, H.~G., Borkin, 
+M.~A., Goodman, A.~A., Pineda, J.~E., 
+\& Beaumont, C.~N.\ 2011, \apj, 742, 105
+
+\bibitem[Beaumont 
+\& Williams(2010)]{Beaumont10} Beaumont, C.~N., \& Williams, J.~P.\ 2010, \apj, 709, 791 
+
+\bibitem[Beaumont et al.(2011)]{Beaumont11} Beaumont, C.~N., 
+Williams, J.~P., \& Goodman, A.~A.\ 2011, \apj, 741, 14 
 
 \bibitem[Benjamin et al.(2003)]{Benjamin03} Benjamin, R.~A., 
 Churchwell, E., Babler, B.~L., et al.\ 2003, \pasp, 115, 953 
@@ -467,13 +478,24 @@ L.~E., Gutermuth, R.~A., et al.\ 2008, \apj, 688, 1142
 \bibitem[Landy 
 \& Szalay(1993)]{Landy93} Landy, S.~D., \& Szalay, A.~S.\ 1993, \apj, 412, 64 
 
+\bibitem[Matzner(2002)]{Matzner02} Matzner, C.~D.\ 2002, \apj, 
+566, 302 
+
 \bibitem[Mottram et 
 al.(2007)]{RMS} Mottram, J.~C., Hoare, M.~G., Lumsden, S.~L., et al.\ 2007, \aap, 476, 1019 
+
+\bibitem[Raddick et al.(2013)]{Raddick13} Raddick, J.~R., Bracey, G., Gay, P.~L. et al\ 2013, arXiv, 1303.6886
 
 \bibitem[Rahman et al.(2011)]{Rahman11} Rahman, M., Matzner, C., 
 \& Moon, D.-S.\ 2011, \apjl, 728, L37 
 
 \bibitem[Raileanu \& Kilian (2004)]{Raileanu04} Raileanu, L.~E. \& Stoffel, K.\ 2004, Annals of Mathematics and Artificial Intelligence, 41, 77
+
+\bibitem[Robin et 
+al.(2003)]{Robin03} Robin, A.~C., Reyl{\'e}, C., Derri{\`e}re, S., \& Picaud, S.\ 2003, \aap, 409, 523 
+
+\bibitem[Robitaille et 
+al.(2012)]{Robitaille12} Robitaille, T.~P., Churchwell, E., Benjamin, R.~A., et al.\ 2012, \aap, 545, A39 
 
 \bibitem[Simpson et al.(2012)]{Simpson12} Simpson, R.~J., Povich, 
 M.~S., Kendrew, S., et al.\ 2012, \mnras, 424, 2442 
@@ -484,12 +506,16 @@ M.~S., Kendrew, S., et al.\ 2012, \mnras, 424, 2442
 \bibitem[Thompson et al.(2012)]{Thompson12} Thompson, M.~A., 
 Urquhart, J.~S., Moore, T.~J.~T., \& Morgan, L.~K.\ 2012, \mnras, 421, 408 
 
-\bibitem[Tola, et al. (2010)]{DAISY}Tola Engin, Lepetit, V. \& Fua, P.\ 2010, IEEE Transactions on Pattern Analysis and Machine Intelligence, 32, 5, 815-830
+\bibitem[Tola et al. (2010)]{DAISY}Tola Engin, Lepetit, V. \& Fua, P.\ 2010, IEEE Transactions on Pattern Analysis and Machine Intelligence, 32, 5, 815-830
 
 \bibitem[Viola \& Jones (2001)]{ViolaJones}Viola, Paul, \& Jones,\ 2001, Proceedings of the 2001 IEEE Computer Society Conference on Computer Vision and Pattern Recognition, 1, I-511
 
 \bibitem[Weaver et al.(1977)]{Weaver77} Weaver, R., McCray, R., 
 Castor, J., Shapiro, P., \& Moore, R.\ 1977, \apj, 218, 377 
+
+\bibitem[Whitworth et al.(1994)]{Whitworth94} Whitworth, A.~P., 
+Bhattal, A.~S., Chapman, S.~J., Disney, M.~J., 
+\& Turner, J.~A.\ 1994, \mnras, 268, 291 
 
 \bibitem[Zavagno et 
 al.(2006)]{Zavagno06} Zavagno, A., Deharveng, L., Comer{\'o}n, F., et al.\ 2006, \aap, 446, 171 
@@ -500,4 +526,34 @@ al.(2006)]{Zavagno06} Zavagno, A., Deharveng, L., Comer{\'o}n, F., et al.\ 2006,
 \& Yorke(2007)]{Zinnecker07} Zinnecker, H., \& Yorke, H.~W.\ 2007, \araa, 45, 481 
 
 \end{thebibliography}
+
+\appendix{
+\section{Expert Survey}
+Figure \ref{fig:expert_form} shows the interface experts used to provide classifications for the expert survey. Each object is shown 6 times, at 3 zoom levels (columns) and two contrast settings (rows). Experts were asked to click one of the three buttons to classify the object as a non-bubble, ambiguous/irregular bubble, or clear bubble. To minimize the effects of fatigue, each user classified objects in a different, random order.
+
+Figure \ref{fig:mwp_survey_gallery} shows the objects in the survey that were drawn randomly from the Milky Way Project catalog. Each image corresponds to the upper-left image of the survey form. Similarly, Figure \ref{fig:uniform_survey_gallery} shows the objects in the uniform sample. Recall that these were selected to be uniformly distributed in Brut's confidence score.
+
+
+\begin{figure}
+\includegraphics[width=5in]{expert_form}
+\caption{A page from the expert survey, showing a possible bubble at 3 zoom levels and 2 contrast settings.}
+\label{fig:expert_form}
+\end{figure}
+
+
+\begin{figure}
+\includegraphics[width=7in]{mwp_survey_gallery}
+\caption{The objects in the expert survey selected from the Milky Way Project catalog. Objects are sorted by Brut's confidence score.}
+\label{fig:mwp_survey_gallery}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=7in]{uniform_survey_gallery}
+\caption{The same as Figure \ref{fig:mwp_survey_gallery}, but for objects from the uniform sample.}
+\label{fig:uniform_survey_gallery}
+\end{figure}
+
+}
+\input{prob_table_head.tex}
+
 \end{document}

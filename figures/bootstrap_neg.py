@@ -9,6 +9,7 @@ from bubbly.dr1 import bubble_params
 def hide_axes():
     plt.gca().get_xaxis().set_visible(False)
     plt.gca().get_yaxis().set_visible(False)
+    plt.gca().axis('off')
 
 def ex(params):
     rgb = RGBExtractor()
@@ -31,10 +32,9 @@ def main():
 
     plt.imshow(images)
 
-    kw = {'color':'k'}
+    kw = {'color':'w', 'lw':4}
     plt.axhline(dx, **kw)
-    kw['color'] = 'white'
-    plt.axvline(dx, lw=3, **kw)
+    plt.axvline(dx, **kw)
 
     kw = {'ha':'center', 'va':'bottom', 'fontsize':14}
     plt.annotate("Random", xy=(dx / 2, 2 * dx - 40), color='white', **kw)
