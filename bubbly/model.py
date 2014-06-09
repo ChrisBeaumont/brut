@@ -33,9 +33,22 @@ class Model(object):
         return on, off
 
     def make_xy(self, on, off):
-        x = np.vstack(self.extractor(*o).reshape(1, -1) for o in on + off)
-        y = np.hstack((np.ones(len(on), dtype=np.int),
-                       np.zeros(len(off), dtype=np.int)))
+        x = []
+        y = []
+        for o in on:
+            try:
+                x.append(self.extractor(*o).reshape(1, -1))
+                y.append(1)
+            except ValueError:
+                pass
+        for o in off:
+            try:
+                x.append(self.extractor(*o).reshape(1, -1))
+                y.append(0)
+            except ValueError:
+                pass
+        x = np.vstack(x)
+        y = np.hstack(y)
 
         #sklearn doesn't like non-finite values, which
         #occasionally popup

@@ -27,7 +27,7 @@ class Extractor(object):
     def __call__(self, lon, l, b, r):
         return self.extract(lon, l, b, r)
 
-    def extract(self, lon, l, b, r):
+    def extract(self, lon, l, b, r, **kwargs):
         """
         Extract a feature vector from a postage stamp description
 
@@ -47,8 +47,11 @@ class Extractor(object):
         A feature vector. The contents of the feature vector
         are configured by subclasses
         """
-        shp = self.shp
-        rgb = get_field(lon).extract_stamp(l, b, r, limits=[1, 97], shp=shp)
+        kwargs.setdefault('limits', [1, 97])
+        kwargs.setdefault('shp', self.shp)
+
+        rgb = get_field(lon).extract_stamp(l, b, r, **kwargs)
+
         if rgb is None:
             raise ValueError("Field is out of bounds")
         elif (rgb[:, :, 1] == 0).mean() > 0.1:

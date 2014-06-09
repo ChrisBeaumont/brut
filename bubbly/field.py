@@ -51,8 +51,11 @@ class Field(object):
 
         i4 = os.path.join(path, 'registered', '%3.3i_i4.fits' % lon)
         mips = os.path.join(path, 'registered', '%3.3i_mips.fits' % lon)
+        i3 = os.path.join(path, 'registered', '%3.3i_i3.fits' % lon)
 
         self.i4 = fits.getdata(i4, memmap=True)
+        if os.path.exists(i3):
+            self.i3 = fits.getdata(i3, memmap=True)
         self.mips = fits.getdata(mips, memmap=True)
         self.wcs = WCS(fits.getheader(i4))
 
@@ -109,7 +112,7 @@ class Field(object):
             r = int(r * 1.25)
 
     def extract_stamp(self, lon, lat, size, do_scale=True, limits=None,
-                      shp=(40, 40)):
+                      shp=(40, 40), i3=False):
         """
         Extract an RGB Postage stamp at the requested position
 
@@ -127,6 +130,8 @@ class Field(object):
             If provided, clip the intensities at the specified percentiles
         shp : tuple of (ysize, xsize) (optional)
             The pixel size of the output stamp
+        i3 : bool (optional)
+            If True, include the 5.8 um data as the blue channel.
         """
 
         lb = np.array([[lon, lat]])
@@ -148,7 +153,12 @@ class Field(object):
 
         i4 = self.i4[bt:tp:stride, lt:rt:stride]
         mips = self.mips[bt:tp:stride, lt:rt:stride]
-        rgb = _sample_and_scale(i4, mips, do_scale, limits, shp=shp)
+        if i3:
+            i3 = self.i3[bt:tp:stride, lt:rt:stride]
+            rgb = _sample_and_scale(i4, mips, do_scale,
+                                    limits, shp=shp, i3=i3)
+        else:
+            rgb = _sample_and_scale(i4, mips, do_scale, limits, shp=shp)
         return rgb
 
 

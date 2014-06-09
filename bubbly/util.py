@@ -223,11 +223,13 @@ def ellipse(x0, y0, a, b, dr, theta0):
     return np.exp(-np.log(r / r0) ** 2 / (dr / 10.) ** 2)
 
 
-def _sample_and_scale(i4, mips, do_scale, limits, shp=(40, 40)):
+def _sample_and_scale(i4, mips, do_scale, limits, shp=(40, 40), i3=None):
     mips = np.where(mips > 0, mips, np.nan)
 
     i4 = resample(i4, shp)
     mips = resample(mips, shp)
+    if i3 is not None:
+        i3 = resample(i3, shp)
 
     assert i4.shape == shp, i4.shape
     assert mips.shape == shp, mips.shape
@@ -238,13 +240,16 @@ def _sample_and_scale(i4, mips, do_scale, limits, shp=(40, 40)):
             i4 = scale(i4, limits=limits)
             mips = scale(mips, mask, limits=limits)
             mips[~mask] = 255
+            if i3 is not None:
+                i3 = scale(i3, mask, limits=[1, 99])
         except ValueError:
             #print 'Could not rescale images (bad pixels?)'
             return
     else:
         mips[~mask] = np.nan
 
-    rgb = np.dstack((mips, i4, i4 * 0))
+    b = i3 if i3 is not None else i4 * 0
+    rgb = np.dstack((mips, i4, b))
     return rgb
 
 
