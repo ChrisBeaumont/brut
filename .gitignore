@@ -12,3 +12,8 @@ build
 *.out
 *.pdf
 *.gz
+*html
+*.png
+prob_table.tex
+prob_table_head.tex
+classify_jobs.json
