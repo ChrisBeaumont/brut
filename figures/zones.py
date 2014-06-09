@@ -13,9 +13,9 @@ for y in [0, 1, 2]:
         ax.add_patch(r)
         ax.add_patch(r2)
 
-plt.annotate('Zone 1', (5, 2.7), ha='center')
-plt.annotate('Zone 2', (5, 1.7), ha='center')
-plt.annotate('Zone 3', (5, .7), ha='center')
+plt.annotate('Forest 1', (5, 2.7), ha='center')
+plt.annotate('Forest 2', (5, 1.7), ha='center')
+plt.annotate('Forest 3', (5, .7), ha='center')
 
 plt.xlim(0, 10)
 plt.ylim(-.1, 3)
