@@ -17,3 +17,6 @@ build
 prob_table.tex
 prob_table_head.tex
 classify_jobs.json
+apj.tgz
+apj/
+*.ps
