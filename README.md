@@ -6,6 +6,15 @@ This repository contains the code and manuscript text used in the paper
 
 The `v1` tag represents the state of the code at the time of publication.
 
+## High level summary
+
+Brut uses a database of known bubbles (from the [Milky Way Project](http://www.milkywayproject.org/)) and Spitzer images from our galaxy to build an automatic bubble classifier. The classifier is based on the Random Forest algorithm, and uses the [WiseRF](http://docs.wise.io/wiserf_python.html) implementation of this algorithm.
+
+The main question that Brut attempts to answer is "does this image contain a bubble?" The images presented to Brut are 2-color square postage stamps extracted from 8 and 24 micron Spitzer images of the Galactic plane. 
+
+The [picloud](http://www.picloud.com/) platform was used to perform some of the computation in parallel, in the cloud.
+
+If you want to dig into the details of how the model is built, start with the Makefile in the scripts/ directory.
 
 ## Organization
 
@@ -34,8 +43,7 @@ To reproduce the figures and models generated for the paper, type:
 ```
 python setup.py develop
 cd bubbly/data && make
-cd paper
-make
+cd ../../paper && make
 ```
 
 Though I promise you you'll have to play with dependencies to get this all set up :)
