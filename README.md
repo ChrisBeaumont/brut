@@ -2,7 +2,7 @@
 
 This repository contains the code and manuscript text used in the paper
 
-*The Milky Way Project: Leveraging Citizen Science and Machine Learning to Detect Interstellar Bubbles. Beaumont, Goodman, Kendrew, Williams, Simpson 2014, ApJS, in press*
+*The Milky Way Project: Leveraging Citizen Science and Machine Learning to Detect Interstellar Bubbles. Beaumont, Goodman, Kendrew, Williams, Simpson 2014, ApJS, in press ([arXiv link](http://arxiv.org/abs/1406.2692))*
 
 The `v1` tag represents the state of the code at the time of publication.
 
