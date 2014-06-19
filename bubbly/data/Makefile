@@ -1,4 +1,8 @@
-all: catalog.pkl hiq.pkl scrape register
+all: scrape register
+
+# note: these require local data to make, so are included in repo
+pickle: catalog.pkl hiq.pkl
+
 
 %.pkl: make_%.py
 	python make_$*.py
