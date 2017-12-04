@@ -1,6 +1,7 @@
 import os
 
-import PyWiseRF
+#import PyWiseRF
+from sklearn.ensemble import RandomForestClassifier
 import cloud
 import numpy as np
 
@@ -14,7 +15,12 @@ def test():
     clf = WiseRF().fit(x, y)
     return clf
 
-class WiseRF(PyWiseRF.WiseRF):
+#class WiseRF(PyWiseRF.WiseRF):
+#    def decision_function(self, x):
+#        p = self.predict_proba(x)
+#        return p[:, 1] - p[:, 0]
+
+class WiseRF(RandomForestClassifier):
     def decision_function(self, x):
         p = self.predict_proba(x)
         return p[:, 1] - p[:, 0]

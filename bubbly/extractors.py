@@ -7,7 +7,7 @@ from itertools import product
 import numpy as np
 from scipy.optimize import fmin_l_bfgs_b as minimize
 from skimage.morphology import disk
-from skimage.filter.rank import percentile_autolevel
+from skimage.filters.rank import autolevel_percentile
 from skimage.feature import daisy
 
 from .field import get_field
@@ -60,6 +60,25 @@ class Extractor(object):
         rgb = self._preprocess_rgb(rgb)
         return self._extract_rgb(rgb)
 
+        
+    def extract_xd(self, lon, l, b, r, **kwargs):
+        kwargs.setdefault('limits', [1, 97])
+        kwargs.setdefault('shp', self.shp)
+#        kwargs.setdefault('i3', True)
+
+        rgb = get_field(lon).extract_stamp(l, b, r, **kwargs)
+
+        if rgb is None:
+            raise ValueError("Field is out of bounds")
+        elif (rgb[:, :, 1] == 0).mean() > 0.1:
+            raise ValueError("Field has no green channel")
+
+#        rgb = self._preprocess_rgb(rgb)
+        rgb = self._preprocess_rgb(rgb)
+#        return self._extract_rgb(rgb)
+        return rgb
+        
+        
     def _extract_rgb(self, rgb):
         raise NotImplementedError()
 
@@ -182,7 +201,22 @@ class RingExtractor(Extractor):
         ts *= (s / 2) / 20
         self.rings = np.column_stack(np.exp(-(r - rr) ** 2 / tt ** 2).ravel()
                                      for rr, tt in product(rs, ts))
+        
+    def _normal_templates_coeff(self, shp):
+        if self._template_shp == shp:
+            return
+        self._template_shp = shp
 
+        s = shp[0]
+        y, x = np.mgrid[0:s, 0:s].astype(np.float)
+        r = np.hypot(y - s / 2, x - s / 2)
+
+        rs = np.linspace(1., s / 2, 7)
+        ts = np.array([2, 4, 6, 8, 10, 15, 20]).astype(np.float)
+        ts *= (s / 2) / 20
+        return np.column_stack(np.exp(-(r - rr) ** 2 / tt ** 2).ravel()
+                                     for rr, tt in product(rs, ts))  
+        
 
     def _extract_rgb(self, rgb):
         self._prepare_templates(rgb.shape)
@@ -197,6 +231,8 @@ class RingExtractor(Extractor):
                             np.dot(rnorm, self.rings),
                             np.dot(gnorm, self.rings),
                             np.dot(rnorm - gnorm, self.rings)])
+#        result = np.hstack([np.dot(r, self.rings),
+#                            np.dot(rnorm, self.rings)])
         return result.reshape(1, -1)
 
 
@@ -204,6 +240,9 @@ class DaisyExtractor(Extractor):
     def _extract_rgb(self, rgb):
         kwargs = dict(step=rgb.shape[0]/5, radius=rgb.shape[0] / 10, rings=2,
                       histograms=6, orientations=8)
+                
+        self.daisyextractor_xd=np.hstack(daisy(rgb[:, :, i], **kwargs).ravel() for i in [0, 1])
+
         return np.hstack(daisy(rgb[:, :, i], **kwargs).ravel() for i in [0, 1])
 
 
@@ -212,12 +251,49 @@ class MultiViewExtractor(Extractor):
         self.orig = orig
 
     def extract(self, lon, l, b, r):
+        
         return np.hstack((self.orig.extract(lon, l, b, r),
                           self.orig.extract(lon, l, b, r / 2),
                           self.orig.extract(lon, l, b, r * 2),
                           self.orig.extract(lon, l, b + r / 2, r)))
 
+    def extract_xd_mve(self, lon, l, b, r):
+        
+        return self.orig.extract_xd(lon, l, b, r)
 
+    def extract_xd_daisy(self, lon, l, b, r):
+        methodname = '_extract_rgb'       
+        a = DaisyExtractor()
+        method_1 = getattr(a, methodname)
+        return method_1(self.orig.extract_xd(lon, l, b, r))
+    
+    def extract_xd_ring(self, lon, l, b, r):
+        methodname = '_extract_rgb'       
+        a = RingExtractor()
+        method_1 = getattr(a, methodname)
+        return method_1(self.orig.extract_xd(lon, l, b, r))
+    
+    def extract_xd_compression(self, lon, l, b, r):
+        methodname = '_extract_rgb'       
+        a = CompressionExtractor()
+        method_1 = getattr(a, methodname)
+        return method_1(self.orig.extract_xd(lon, l, b, r))
+    
+    def extract_xd_wavelet(self, lon, l, b, r):
+        methodname = '_extract_rgb'       
+        a = MultiWaveletExtractor()
+        method_1 = getattr(a, methodname)
+        return method_1(self.orig.extract_xd(lon, l, b, r))
+    
+    def extract_xd_ring_templates(self, lon, l, b, r):        
+        methodname = '_normal_templates_coeff'       
+        a = RingExtractor()
+        method_1 = getattr(a, methodname)
+        return method_1(self.orig.extract_xd(lon, l, b, r).shape)
+    
+
+
+        
 class CompositeExtractor(Extractor):
     composite_classes = []
 
@@ -258,5 +334,5 @@ def enhance_contrast(rgb):
     s = rgb.shape
     d = disk(s[0] / 5)
     for i in range(3):
-        rgb[:, :, i] = percentile_autolevel(rgb[:, :, i], d, p0=.1, p1=.9)
+        rgb[:, :, i] = autolevel_percentile(rgb[:, :, i], d, p0=.1, p1=.9)
     return rgb

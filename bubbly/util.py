@@ -3,7 +3,7 @@ from cPickle import load, dump
 import logging
 
 from skimage.transform import resize
-from sklearn.metrics import recall_score, auc_score
+from sklearn.metrics import recall_score, roc_auc_score
 import numpy as np
 
 
@@ -56,9 +56,14 @@ def scale(x, mask=None, limits=None):
     if mask is None:
         lo, hi = np.percentile(x, limits)
     else:
-        lo, hi = np.percentile(x[mask], limits)
-
+        if x[mask].size>0:
+#            print x[mask].shape
+            lo, hi = np.percentile(x[mask], limits)
+        else:
+            lo,hi=0,0
+        
     x = (np.clip(x, lo, hi) - lo) / (hi - lo)
+#    return  x[mask].shape
     return (np.sqrt(x) * 255).astype(np.uint8)
 
 
@@ -67,7 +72,7 @@ def resample(arr, shape):
     # skimage's resize needs scaled data
     lo, hi = np.nanmin(arr), np.nanmax(arr)
     arr = (arr - lo) / (hi - lo)
-    result = resize(arr, shape, mode='nearest')
+    result = resize(arr, shape, mode='edge')
     return result * (hi - lo) + lo
 
 
